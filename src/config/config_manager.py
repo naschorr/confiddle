@@ -7,7 +7,6 @@ from config.enums.config_flavor import ConfigFlavor
 from config.models.confit_config_model import ConfitConfigModel
 from config.providers.argparse_config_provider import ArgparseConfigProvider
 from config.providers.base_config_provider import BaseConfigProvider
-from config.providers.dict_config_provider import DictConfigProvider
 from config.providers.env_var_config_provider import EnvVarConfigProvider
 from config.providers.json_config_provider import JsonConfigProvider
 from config.providers.kwarg_config_provider import KwargConfigProvider
@@ -81,9 +80,9 @@ class ConfigManager:
         elif item is ConfigFlavor.ENV:
             return self._build_env_provider(model, confit_config)
         elif item is ConfigFlavor.ARGPARSE:
-            return self._build_dict_provider(model, ArgparseConfigProvider, provider_data.get(ConfigFlavor.ARGPARSE))
+            return self._build_argparse_provider(model, provider_data.get(ConfigFlavor.ARGPARSE))
         elif item is ConfigFlavor.KWARG:
-            return self._build_dict_provider(model, KwargConfigProvider, provider_data.get(ConfigFlavor.KWARG))
+            return self._build_kwarg_provider(model, provider_data.get(ConfigFlavor.KWARG))
 
         return None
 
@@ -93,6 +92,7 @@ class ConfigManager:
         config_key: ConfigFlavor | ConfigEnvironment,
         confit_config: ConfitConfigModel,
     ) -> Optional[JsonConfigProvider]:
+        ## TODO: If config_key == ConfigFlavor.BASE, we should also handle the config.json case in addition to config.base.json
         if confit_config.config_directory is None:
             return None
 
@@ -115,13 +115,22 @@ class ConfigManager:
 
         return EnvVarConfigProvider(model, env_var_prefix=prefix, env_var_delimiter=confit_config.env_var_delimiter)
 
-    def _build_dict_provider(
+    def _build_argparse_provider(
         self,
         model: type[T],
-        provider_cls: type[DictConfigProvider],
         data: Optional[dict],
-    ) -> Optional[DictConfigProvider]:
+    ) -> Optional[ArgparseConfigProvider]:
         if not data:
             return None
 
-        return provider_cls(model, data)
+        return ArgparseConfigProvider(model, data)
+
+    def _build_kwarg_provider(
+        self,
+        model: type[T],
+        data: Optional[dict],
+    ) -> Optional[KwargConfigProvider]:
+        if not data:
+            return None
+
+        return KwargConfigProvider(model, **data)
