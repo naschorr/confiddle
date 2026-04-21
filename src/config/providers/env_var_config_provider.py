@@ -37,8 +37,8 @@ class EnvVarConfigProvider(BaseConfigProvider):
             if env_var.startswith(self._env_var_delimiter):
                 env_var = env_var[len(self._env_var_delimiter) :]
 
-            # Split the environment variable name into parts using the delimiter
-            parts = env_var.split(self._env_var_delimiter)
+            # Split the environment variable name into parts using the delimiter, lowercased to match Pydantic field names
+            parts = [part.lower() for part in env_var.split(self._env_var_delimiter)]
 
             # Insert the value into the config dict at the appropriate nested level
             current_level = config_dict
