@@ -9,6 +9,7 @@ from config.config_manager import ConfigManager
 from config.enums.config_environment import ConfigEnvironment
 from config.enums.config_flavor import ConfigFlavor
 from config.models.confit_config_model import ConfitConfigModel
+from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
 class SampleModel(BaseModel):
@@ -58,7 +59,7 @@ class TestJsonProvider:
 
     def test_skips_json_when_no_config_directory(self):
         config_manager = ConfigManager()
-        config_manager.confit_config = ConfitConfigModel()  # config_directory=None
+        config_manager.confit_config = ConfitConfigModel()  # json_file.directory_path=None
         result = config_manager.get_config(SampleModel)
         assert result.name == "default"
 
@@ -67,7 +68,7 @@ class TestJsonProvider:
         result = bootstrapped_manager.get_config(SampleModel)
         assert result.name == "default"
 
-    def test_skips_env_json_when_environment_mismatch(self, config_dir: Path):
+    def test_skips_json_when_environment_mismatch(self, config_dir: Path):
         # hierarchy default includes DEV env; we set environment=PROD so DEV file is skipped
         from config.enums.config_environment import ConfigEnvironment
 
@@ -76,7 +77,7 @@ class TestJsonProvider:
 
         config_manager = ConfigManager()
         config_manager.confit_config = ConfitConfigModel(
-            config_directory=config_dir,
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
             environment=ConfigEnvironment.PROD,
         )
         result = config_manager.get_config(SampleModel)
@@ -113,8 +114,8 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confit_config = ConfitConfigModel(
-            config_directory=config_dir,
-            config_hierarchy=[ConfigFlavor.BASE, ConfigFlavor.KWARG],
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            hierarchy=[ConfigFlavor.BASE, ConfigFlavor.KWARG],
         )
         result = config_manager.get_config(SampleModel, provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}})
         assert result.name == "from_kwarg"
@@ -126,9 +127,9 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confit_config = ConfitConfigModel(
-            config_directory=config_dir,
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
             environment=ConfigEnvironment.DEV,
-            config_hierarchy=[ConfigFlavor.BASE, ConfigEnvironment.DEV],
+            hierarchy=[ConfigFlavor.BASE, ConfigEnvironment.DEV],
         )
         result = config_manager.get_config(SampleModel)
         assert result.name == "from_dev"
@@ -138,8 +139,8 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confit_config = ConfitConfigModel(
-            config_directory=config_dir,
-            config_hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE],
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE],
         )
         result = config_manager.get_config(
             SampleModel, provider_data={ConfigFlavor.ARGPARSE: {"name": "from_argparse"}}
@@ -148,8 +149,10 @@ class TestHierarchyOrder:
 
     def test_kwarg_overwrites_argparse(self, bootstrapped_manager: ConfigManager):
         bootstrapped_manager.confit_config = ConfitConfigModel(
-            config_directory=bootstrapped_manager.confit_config.config_directory,
-            config_hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.KWARG],
+            json_file=JsonConfigProviderConfigModel(
+                directory_path=bootstrapped_manager.confit_config.json_file.directory_path
+            ),
+            hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.KWARG],
         )
         result = bootstrapped_manager.get_config(
             SampleModel,
@@ -166,8 +169,8 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confit_config = ConfitConfigModel(
-            config_directory=config_dir,
-            config_hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.BASE],
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.BASE],
         )
         result = config_manager.get_config(SampleModel, provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}})
         assert result.name == "from_base"
@@ -179,7 +182,7 @@ class TestBuildProviderCoverage:
         for flavor in ConfigFlavor:
             config_manager = ConfigManager()
             config_manager.confit_config = ConfitConfigModel(
-                config_hierarchy=[flavor],
+                hierarchy=[flavor],
             )
             # Provide data for dict-based flavors so they aren't skipped as None
             provider_data = {ConfigFlavor.KWARG: {"name": "x"}, ConfigFlavor.ARGPARSE: {"name": "x"}}
@@ -192,9 +195,9 @@ class TestBuildProviderCoverage:
 
             config_manager = ConfigManager()
             config_manager.confit_config = ConfitConfigModel(
-                config_directory=config_dir,
+                json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
                 environment=env,
-                config_hierarchy=[env],
+                hierarchy=[env],
             )
             result = config_manager.get_config(SampleModel)
             assert result.name == env.value

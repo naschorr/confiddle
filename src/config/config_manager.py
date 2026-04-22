@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from config.enums.config_environment import ConfigEnvironment
 from config.enums.config_flavor import ConfigFlavor
 from config.models.confit_config_model import ConfitConfigModel
+from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 from config.providers.argparse_config_provider import ArgparseConfigProvider
 from config.providers.base_config_provider import BaseConfigProvider
 from config.providers.env_var_config_provider import EnvVarConfigProvider
@@ -57,7 +58,7 @@ class ConfigManager:
     def _build_providers(self, model: type[T], provider_data: dict[ConfigFlavor, dict]) -> list[BaseConfigProvider]:
         confit_config = self._confit_config or ConfitConfigModel()
         providers = []
-        for item in confit_config.config_hierarchy:
+        for item in confit_config.hierarchy:
             provider = self._build_provider(item, model, confit_config, provider_data)
             if provider is not None:
                 providers.append(provider)
@@ -72,11 +73,13 @@ class ConfigManager:
         provider_data: dict[ConfigFlavor, dict],
     ) -> Optional[BaseConfigProvider]:
         if item is ConfigFlavor.BASE:
-            return self._build_json_provider(model, ConfigFlavor.BASE, confit_config)
+            json_config = confit_config.bootstrap.json_file if model is ConfitConfigModel else confit_config.json_file
+            return self._build_json_provider(model, ConfigFlavor.BASE, json_config)
         elif isinstance(item, ConfigEnvironment):
             if item is not confit_config.environment:
                 return None
-            return self._build_json_provider(model, item, confit_config)
+            json_config = confit_config.bootstrap.json_file if model is ConfitConfigModel else confit_config.json_file
+            return self._build_json_provider(model, item, json_config)
         elif item is ConfigFlavor.ENV:
             return self._build_env_provider(model, confit_config)
         elif item is ConfigFlavor.ARGPARSE:
@@ -90,30 +93,31 @@ class ConfigManager:
         self,
         model: type[T],
         config_key: ConfigFlavor | ConfigEnvironment,
-        confit_config: ConfitConfigModel,
+        json_config: JsonConfigProviderConfigModel,
     ) -> Optional[JsonConfigProvider]:
-        ## TODO: If config_key == ConfigFlavor.BASE, we should also handle the config.json case in addition to config.base.json
-        if confit_config.config_directory is None:
+        if json_config.directory_path is None:
             return None
 
-        config_file_name = confit_config.config_filename_template.format(environment=config_key.value)
-        config_file_path = confit_config.config_directory / config_file_name
+        provider = JsonConfigProvider(
+            model,
+            directory_path=json_config.directory_path,
+            filename_template=json_config.filename_template,
+            environment=config_key,
+        )
 
-        if not config_file_path.exists():
+        if not provider.file_path.exists():
             return None
 
-        return JsonConfigProvider(model, config_file_path)
+        return provider
 
     def _build_env_provider(
         self,
         model: type[T],
         confit_config: ConfitConfigModel,
     ) -> EnvVarConfigProvider:
-        prefix = confit_config.config_env_var_prefix
-        if model is ConfitConfigModel:
-            prefix = confit_config.confit_env_var_prefix
+        env_config = confit_config.bootstrap.env_var if model is ConfitConfigModel else confit_config.env_var
 
-        return EnvVarConfigProvider(model, env_var_prefix=prefix, env_var_delimiter=confit_config.env_var_delimiter)
+        return EnvVarConfigProvider(model, prefix=env_config.prefix, delimiter=env_config.delimiter)
 
     def _build_argparse_provider(
         self,
