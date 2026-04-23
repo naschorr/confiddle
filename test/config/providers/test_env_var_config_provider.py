@@ -164,3 +164,43 @@ class TestIngestRoundTrip:
         assert model.database.host == "db.prod"
         assert model.database.port == 5433  # Pydantic coerces "5433" str -> int
         assert model.service.timeout == 90
+
+
+## ── Schema-aware ingest ───────────────────────────────────────────────────────
+
+
+class TestSchemaAwareIngest:
+    def test_flat_string_for_nested_model_field_is_ignored(self, monkeypatch):
+        # DATABASE is a DatabaseConfig (BaseModel) field - a raw string can't populate it
+        monkeypatch.setenv("APP:DATABASE", "flat-string")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert "database" not in result
+
+    def test_nested_path_for_nested_model_field_still_works(self, monkeypatch):
+        monkeypatch.setenv("APP:DATABASE:HOST", "db.io")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["database"]["host"] == "db.io"
+
+    def test_collision_flat_and_nested_same_key_does_not_crash(self, monkeypatch):
+        # The flat var must be silently discarded; the nested var must survive
+        monkeypatch.setenv("APP:DATABASE", "flat-string")
+        monkeypatch.setenv("APP:DATABASE:HOST", "db.io")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["database"]["host"] == "db.io"
+
+    def test_nested_path_for_primitive_field_is_ignored(self, monkeypatch):
+        # app_name is a str - a deeper path like APP:APP_NAME:EXTRA should be silently dropped
+        monkeypatch.setenv("APP:APP_NAME:EXTRA", "value")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert "app_name" not in result
+
+    def test_flat_value_for_primitive_field_still_works(self, monkeypatch):
+        monkeypatch.setenv("APP:APP_NAME", "myapp")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["app_name"] == "myapp"
+
+    def test_dict_field_still_builds_nested_dict_from_env_vars(self, monkeypatch):
+        # db: dict - env vars should build a nested dict as before
+        monkeypatch.setenv("MYAPP:DB:HOST", "db.local")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result["db"] == {"host": "db.local"}

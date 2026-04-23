@@ -2,6 +2,7 @@ import os
 from typing import Optional, TypeVar
 
 from config.providers.base_config_provider import BaseConfigProvider
+from helpers.field_annotation_helper import get_field_annotation, is_container_annotation, unwrap_annotation
 
 from pydantic import BaseModel
 
@@ -11,7 +12,7 @@ T = TypeVar("T", bound=BaseModel)
 
 class EnvVarConfigProvider(BaseConfigProvider):
     """
-    Loads configuration data from environment variables
+    Loads configuration data from environment variables into a dictionary structure that matches the provided model.
     """
 
     def __init__(self, model: type[T], *, prefix: Optional[str], delimiter: str):
@@ -39,15 +40,40 @@ class EnvVarConfigProvider(BaseConfigProvider):
             if env_var.startswith(self._delimiter):
                 env_var = env_var[len(self._delimiter) :]
 
-            # Split the environment variable name into parts using the delimiter, lowercased to match Pydantic field names
+            # Split into parts, lowercased to match Pydantic field names
             parts = [part.lower() for part in env_var.split(self._delimiter)]
 
-            # Insert the value into the config dict at the appropriate nested level
-            current_level = config_dict
-            for part in parts[:-1]:
-                if part not in current_level:
-                    current_level[part] = {}
-                current_level = current_level[part]
-            current_level[parts[-1]] = value
+            self._set_nested(config_dict, parts, value, self._model)
 
         return config_dict
+
+    def _set_nested(self, target: dict, parts: list[str], value: str, model) -> None:
+        key = parts[0]
+        annotation = get_field_annotation(model, key)
+
+        # For unknown fields (annotation is None), be permissive: allow both flat and nested paths.
+        # For known fields, use the schema to decide whether to assign a flat value or descend.
+        known_container = annotation is not None and is_container_annotation(annotation)
+        known_primitive = annotation is not None and not is_container_annotation(annotation)
+
+        if len(parts) == 1:
+            # Leaf: only assign if the field is not a known container type
+            if not known_container:
+                target[key] = value
+            return
+
+        # Multi-part path: skip descent if the field is a known primitive
+        if known_primitive:
+            return
+
+        if key not in target or not isinstance(target[key], dict):
+            target[key] = {}
+
+        # Determine the child model for schema lookups at the next level
+        unwrapped = unwrap_annotation(annotation) if annotation is not None else None
+        child_model = (
+            unwrapped
+            if unwrapped is not None and isinstance(unwrapped, type) and issubclass(unwrapped, BaseModel)
+            else None
+        )
+        self._set_nested(target[key], parts[1:], value, child_model)
