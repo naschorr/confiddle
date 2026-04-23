@@ -2,7 +2,6 @@ import os
 from typing import Optional, TypeVar
 
 from config.providers.base_config_provider import BaseConfigProvider
-from helpers.model_validator import ModelValidator
 
 from pydantic import BaseModel
 
@@ -16,15 +15,18 @@ class EnvVarConfigProvider(BaseConfigProvider):
     """
 
     def __init__(self, model: type[T], *, prefix: Optional[str], delimiter: str):
-        self._model = model
+        super().__init__(model)
+
         self._prefix = prefix
         self._delimiter = delimiter
 
-    def get_config(self) -> dict:
+    def _get_raw_config(self) -> dict:
         ## Filter environment variables by prefix if a prefix is specified
         env_vars = dict(os.environ)
         if self._prefix:
-            env_vars = {k: v for k, v in env_vars.items() if k.startswith(self._prefix)}
+            env_vars = {
+                k: v for k, v in env_vars.items() if k == self._prefix or k.startswith(self._prefix + self._delimiter)
+            }
 
         ## Parse the environment variables into a nested config dict
         config_dict = {}
@@ -47,8 +49,5 @@ class EnvVarConfigProvider(BaseConfigProvider):
                     current_level[part] = {}
                 current_level = current_level[part]
             current_level[parts[-1]] = value
-
-        ## Validate the config dict against the partial model
-        ModelValidator.validate_partial_model(self._model, config_dict)
 
         return config_dict

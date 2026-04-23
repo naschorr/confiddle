@@ -15,9 +15,9 @@ def test_returns_dict():
     assert provider.get_config() == {"name": "x"}
 
 
-def test_passes_through_unknown_field():
+def test_unknown_keys_filtered_out():
     result = DictConfigProvider(SampleModel, {"unknown": "field"}).get_config()
-    assert result == {"unknown": "field"}
+    assert result == {}
 
 
 def test_kwarg_provider_wraps_kwargs():
@@ -25,9 +25,19 @@ def test_kwarg_provider_wraps_kwargs():
     assert provider.get_config() == {"name": "x"}
 
 
+def test_kwarg_unknown_keys_filtered_out():
+    result = KwargConfigProvider(SampleModel, unknown="field").get_config()
+    assert result == {}
+
+
 def test_argparse_provider_wraps_dict():
     provider = ArgparseConfigProvider(SampleModel, {"name": "x"})
     assert provider.get_config() == {"name": "x"}
+
+
+def test_argparse_unknown_keys_filtered_out():
+    result = ArgparseConfigProvider(SampleModel, {"unknown": "field"}).get_config()
+    assert result == {}
 
 
 def test_empty_dict_returns_empty():

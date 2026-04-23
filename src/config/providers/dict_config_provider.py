@@ -1,7 +1,6 @@
 from typing import TypeVar
 
 from config.providers.base_config_provider import BaseConfigProvider
-from helpers.model_validator import ModelValidator
 
 from pydantic import BaseModel
 
@@ -15,11 +14,8 @@ class DictConfigProvider(BaseConfigProvider):
     """
 
     def __init__(self, model: type[T], config_dict: dict):
-        self._model = model
+        super().__init__(model)
         self._config_dict = config_dict
 
-    def get_config(self) -> dict:
-        ## Validate the config dict against the partial model
-        ModelValidator.validate_partial_model(self._model, self._config_dict)
-
+    def _get_raw_config(self) -> dict:
         return self._config_dict

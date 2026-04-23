@@ -1,54 +1,184 @@
+import os
+
 import pytest
 from pydantic import BaseModel, ValidationError
 
 from config.providers.env_var_config_provider import EnvVarConfigProvider
 
+## ── Setup ─────────────────────────────────────────────────────────
 
-class SampleModel(BaseModel):
+
+@pytest.fixture(autouse=True)
+def isolate_env(monkeypatch):
+    """Replace os.environ with an empty dict so tests only see vars they explicitly set."""
+    monkeypatch.setattr(os, "environ", {})
+
+
+class FlatModel(BaseModel):
     name: str = "default"
     db: dict = {}
 
 
-def test_reads_prefixed_vars(monkeypatch):
-    monkeypatch.setenv("MYAPP:NAME", "foo")
-    provider = EnvVarConfigProvider(SampleModel, prefix="MYAPP", delimiter=":")
-    assert provider.get_config() == {"name": "foo"}
+class DatabaseConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 5432
+    credentials: dict = {}
 
 
-def test_lowercase_keys(monkeypatch):
-    monkeypatch.setenv("MYAPP:NAME", "foo")
-    provider = EnvVarConfigProvider(SampleModel, prefix="MYAPP", delimiter=":")
-    result = provider.get_config()
-    assert "name" in result
-    assert "NAME" not in result
+class ServiceConfig(BaseModel):
+    timeout: int = 30
+    retries: int = 3
 
 
-def test_nested_keys(monkeypatch):
-    monkeypatch.setenv("MYAPP:DB:HOST", "localhost")
-    provider = EnvVarConfigProvider(SampleModel, prefix="MYAPP", delimiter=":")
-    result = provider.get_config()
-    assert result == {"db": {"host": "localhost"}}
+class NestedModel(BaseModel):
+    app_name: str = "app"
+    database: DatabaseConfig = DatabaseConfig()
+    service: ServiceConfig = ServiceConfig()
 
 
-def test_ignores_non_prefixed(monkeypatch):
-    monkeypatch.setenv("OTHER:NAME", "should_be_ignored")
-    monkeypatch.setenv("MYAPP:NAME", "correct")
-    provider = EnvVarConfigProvider(SampleModel, prefix="MYAPP", delimiter=":")
-    result = provider.get_config()
-    assert result == {"name": "correct"}
+class StrictModel(BaseModel):
+    count: int
+    label: str
 
 
-def test_no_prefix_includes_all(monkeypatch):
-    monkeypatch.setenv("NAME", "noprefix")
-    provider = EnvVarConfigProvider(SampleModel, prefix=None, delimiter=":")
-    result = provider.get_config()
-    assert "name" in result
+def _provider(model, *, prefix, delimiter=":", monkeypatch=None, env_vars: dict = None):
+    if env_vars and monkeypatch:
+        for k, v in env_vars.items():
+            monkeypatch.setenv(k, v)
+    return EnvVarConfigProvider(model, prefix=prefix, delimiter=delimiter)
 
 
-def test_empty_result_when_no_matching_vars(monkeypatch):
-    # Clear any MYAPP-prefixed vars that might exist
-    for key in list(__import__("os").environ.keys()):
-        if key.startswith("MYAPP"):
-            monkeypatch.delenv(key, raising=False)
-    provider = EnvVarConfigProvider(SampleModel, prefix="MYAPP", delimiter=":")
-    assert provider.get_config() == {}
+## ── Prefix and filtering ──────────────────────────────────────────────────────
+
+
+class TestPrefixFiltering:
+    def test_reads_prefixed_var(self, monkeypatch):
+        monkeypatch.setenv("MYAPP:NAME", "foo")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result == {"name": "foo"}
+
+    def test_ignores_non_prefixed_vars(self, monkeypatch):
+        monkeypatch.setenv("OTHER:NAME", "ignored")
+        monkeypatch.setenv("MYAPP:NAME", "correct")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result == {"name": "correct"}
+
+    def test_no_prefix_includes_all_vars(self, monkeypatch):
+        monkeypatch.setenv("NAME", "noprefix")
+        result = EnvVarConfigProvider(FlatModel, prefix=None, delimiter=":").get_config()
+        assert result == {"name": "noprefix"}
+
+    def test_empty_result_when_no_matching_vars(self, monkeypatch):
+        for key in list(__import__("os").environ.keys()):
+            if key.startswith("MYAPP"):
+                monkeypatch.delenv(key, raising=False)
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result == {}
+
+    def test_prefix_consumed_from_key(self, monkeypatch):
+        monkeypatch.setenv("APP:NAME", "bar")
+        result = EnvVarConfigProvider(FlatModel, prefix="APP", delimiter=":").get_config()
+        assert result == {"name": "bar"}
+        assert "app" not in result
+
+    def test_ignores_vars_with_longer_prefix_match(self, monkeypatch):
+        # "APP" prefix must not match "APPSETTINGS", "APPLICATIONINSIGHTS", etc.
+        monkeypatch.setenv("APPSETTINGS_DB", "should_be_ignored")
+        monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "should_be_ignored")
+        monkeypatch.setenv("APP:NAME", "correct")
+        result = EnvVarConfigProvider(FlatModel, prefix="APP", delimiter=":").get_config()
+        assert result == {"name": "correct"}
+
+
+## ── Key normalisation ─────────────────────────────────────────────────────────
+
+
+class TestKeyNormalisation:
+    def test_keys_lowercased(self, monkeypatch):
+        monkeypatch.setenv("MYAPP:NAME", "x")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert "name" in result
+        assert "NAME" not in result
+
+    def test_leading_delimiter_stripped(self, monkeypatch):
+        # env var is PREFIX:KEY — after removing prefix ":KEY" has a leading delimiter
+        monkeypatch.setenv("MYAPP:NAME", "stripped")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result == {"name": "stripped"}
+
+
+## ── Nesting ───────────────────────────────────────────────────────────────────
+
+
+class TestNesting:
+    def test_single_level_nesting(self, monkeypatch):
+        monkeypatch.setenv("MYAPP:DB:HOST", "db.local")
+        result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result == {"db": {"host": "db.local"}}
+
+    def test_two_sibling_nested_keys(self, monkeypatch):
+        monkeypatch.setenv("MYAPP:DATABASE:HOST", "db.local")
+        monkeypatch.setenv("MYAPP:DATABASE:PORT", "5433")
+        result = EnvVarConfigProvider(NestedModel, prefix="MYAPP", delimiter=":").get_config()
+        assert result["database"] == {"host": "db.local", "port": "5433"}
+
+    def test_multiple_top_level_nested_sections(self, monkeypatch):
+        monkeypatch.setenv("APP:DATABASE:HOST", "prod-db")
+        monkeypatch.setenv("APP:DATABASE:PORT", "3306")
+        monkeypatch.setenv("APP:SERVICE:TIMEOUT", "60")
+        monkeypatch.setenv("APP:SERVICE:RETRIES", "5")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["database"]["host"] == "prod-db"
+        assert result["database"]["port"] == "3306"
+        assert result["service"]["timeout"] == "60"
+        assert result["service"]["retries"] == "5"
+
+    def test_three_level_deep_nesting(self, monkeypatch):
+        monkeypatch.setenv("APP:DATABASE:CREDENTIALS:PASSWORD", "secret")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["database"]["credentials"]["password"] == "secret"
+
+    def test_double_underscore_delimiter(self, monkeypatch):
+        monkeypatch.setenv("APP__DATABASE__HOST", "dunder-host")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter="__").get_config()
+        assert result["database"]["host"] == "dunder-host"
+
+    def test_double_underscore_three_levels(self, monkeypatch):
+        monkeypatch.setenv("APP__DATABASE__CREDENTIALS__PASSWORD", "pw")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter="__").get_config()
+        assert result["database"]["credentials"]["password"] == "pw"
+
+    def test_mixed_flat_and_nested(self, monkeypatch):
+        monkeypatch.setenv("APP:APP_NAME", "myservice")
+        monkeypatch.setenv("APP:DATABASE:HOST", "db.io")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        assert result["app_name"] == "myservice"
+        assert result["database"]["host"] == "db.io"
+
+
+## ── Full ingest round-trip ────────────────────────────────────────────────────
+
+
+class TestIngestRoundTrip:
+    def test_flat_values_round_trip(self, monkeypatch):
+        monkeypatch.setenv("APP:APP_NAME", "roundtrip")
+        monkeypatch.setenv("APP:DATABASE__HOST", "db")  # wrong delimiter — should not parse
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        model = NestedModel(**result)
+        assert model.app_name == "roundtrip"
+
+    def test_nested_values_round_trip_into_model(self, monkeypatch):
+        monkeypatch.setenv("APP:DATABASE:HOST", "db.prod")
+        monkeypatch.setenv("APP:DATABASE:PORT", "5433")
+        monkeypatch.setenv("APP:SERVICE:TIMEOUT", "90")
+        result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
+        model = NestedModel(**result)
+        assert model.database.host == "db.prod"
+        assert model.database.port == 5433  # Pydantic coerces "5433" str -> int
+        assert model.service.timeout == 90
+
+    def test_invalid_type_raises_on_validation(self, monkeypatch):
+        monkeypatch.setenv("APP:COUNT", "not-a-number")
+        monkeypatch.setenv("APP:LABEL", "ok")
+        with pytest.raises(ValidationError):
+            EnvVarConfigProvider(StrictModel, prefix="APP", delimiter=":").get_config()
