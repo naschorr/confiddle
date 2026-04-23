@@ -27,15 +27,26 @@ class JsonConfigProvider(BaseConfigProvider):
     ):
         super().__init__(model)
 
-        ## TODO: If config_key == ConfigFlavor.BASE, we should also handle the config.json case in addition to config.base.json
-        self._file_path = directory_path / filename_template.format(environment=environment.value)
+        primary = directory_path / filename_template.format(environment=environment.value)
+
+        ## For ConfigFlavor.BASE with a template that contains {environment}, also resolve a plain fallback (e.g.
+        ## "config.json") so a bare config file works without renaming.
+        if environment is ConfigFlavor.BASE and "{environment}" in filename_template:
+            fallback = directory_path / filename_template.replace("{environment}", "").replace("..", ".")
+            self._file_path = primary
+            self._fallback_path: Path | None = fallback
+        else:
+            self._file_path = primary
+            self._fallback_path = None
 
     @property
     def file_path(self) -> Path:
+        if self._fallback_path is not None and not self._file_path.exists() and self._fallback_path.exists():
+            return self._fallback_path
         return self._file_path
 
     def _get_raw_config(self) -> dict:
-        if not self._file_path.exists():
-            raise FileNotFoundError(f"Config file path '{self._file_path}' does not exist")
+        if not self.file_path.exists():
+            raise FileNotFoundError(f"Config file path '{self.file_path}' does not exist")
 
-        return JsonLoader.load_json(self._file_path)
+        return JsonLoader.load_json(self.file_path)

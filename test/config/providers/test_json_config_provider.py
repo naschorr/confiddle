@@ -223,3 +223,92 @@ class TestValidation:
         result = p.get_config()
         model = StrictModel(**result)
         assert model.count == 99
+
+
+## ── BASE fallback to plain config.json ───────────────────────────────────────
+
+
+class TestBaseFallback:
+    def test_loads_config_base_json_when_present(self, tmp_path):
+        (tmp_path / "config.base.json").write_text(json.dumps({"name": "from_base"}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.get_config()["name"] == "from_base"
+
+    def test_falls_back_to_config_json_when_base_file_missing(self, tmp_path):
+        (tmp_path / "config.json").write_text(json.dumps({"name": "from_fallback"}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.get_config()["name"] == "from_fallback"
+
+    def test_prefers_config_base_json_over_config_json(self, tmp_path):
+        (tmp_path / "config.base.json").write_text(json.dumps({"name": "primary"}))
+        (tmp_path / "config.json").write_text(json.dumps({"name": "fallback"}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.get_config()["name"] == "primary"
+
+    def test_file_path_reflects_primary_when_present(self, tmp_path):
+        (tmp_path / "config.base.json").write_text(json.dumps({}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.file_path == tmp_path / "config.base.json"
+
+    def test_file_path_reflects_fallback_when_primary_missing(self, tmp_path):
+        (tmp_path / "config.json").write_text(json.dumps({}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.file_path == tmp_path / "config.json"
+
+    def test_raises_when_neither_file_exists(self, tmp_path):
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigFlavor.BASE,
+        )
+        with pytest.raises(FileNotFoundError):
+            p.get_config()
+
+    def test_fallback_only_applies_to_base_not_other_environments(self, tmp_path):
+        # config.json exists but we're loading DEV - should not fall back to it
+        (tmp_path / "config.json").write_text(json.dumps({"name": "should_not_load"}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigEnvironment.DEV,
+        )
+        with pytest.raises(FileNotFoundError):
+            p.get_config()
+
+    def test_no_fallback_when_template_has_no_placeholder(self, tmp_path):
+        # Template without {environment} resolves to the same name regardless of flavor - no special fallback logic needed or triggered
+        (tmp_path / "config.json").write_text(json.dumps({"name": "static"}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.json",
+            environment=ConfigFlavor.BASE,
+        )
+        assert p.get_config()["name"] == "static"
