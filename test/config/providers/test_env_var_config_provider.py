@@ -89,7 +89,7 @@ class TestKeyNormalisation:
         assert "NAME" not in result
 
     def test_leading_delimiter_stripped(self, monkeypatch):
-        # env var is PREFIX:KEY — after removing prefix ":KEY" has a leading delimiter
+        # env var is PREFIX:KEY - after removing prefix ":KEY" has a leading delimiter
         monkeypatch.setenv("MYAPP:NAME", "stripped")
         result = EnvVarConfigProvider(FlatModel, prefix="MYAPP", delimiter=":").get_config()
         assert result == {"name": "stripped"}
@@ -150,7 +150,7 @@ class TestNesting:
 class TestIngestRoundTrip:
     def test_flat_values_round_trip(self, monkeypatch):
         monkeypatch.setenv("APP:APP_NAME", "roundtrip")
-        monkeypatch.setenv("APP:DATABASE__HOST", "db")  # wrong delimiter — should not parse
+        monkeypatch.setenv("APP:DATABASE__HOST", "db")  # wrong delimiter - should not parse
         result = EnvVarConfigProvider(NestedModel, prefix="APP", delimiter=":").get_config()
         model = NestedModel(**result)
         assert model.app_name == "roundtrip"

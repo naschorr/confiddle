@@ -64,7 +64,7 @@ class TestJsonProvider:
         assert result.name == "default"
 
     def test_skips_json_when_file_not_present(self, bootstrapped_manager: ConfigManager):
-        # config_dir has no JSON files placed — no config_file fixture used
+        # config_dir has no JSON files placed - no config_file fixture used
         result = bootstrapped_manager.get_config(SampleModel)
         assert result.name == "default"
 
@@ -121,7 +121,7 @@ class TestHierarchyOrder:
         assert result.name == "from_kwarg"
 
     def test_env_json_overwrites_base_json(self, config_dir: Path):
-        # BASE loads first, then DEV env file — DEV should win
+        # BASE loads first, then DEV env file - DEV should win
         (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
         (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
 
@@ -164,7 +164,7 @@ class TestHierarchyOrder:
         assert result.name == "from_kwarg"
 
     def test_custom_hierarchy_order_respected(self, config_dir: Path):
-        # Reversed: KWARG first, BASE last — BASE json should win
+        # Reversed: KWARG first, BASE last - BASE json should win
         (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
