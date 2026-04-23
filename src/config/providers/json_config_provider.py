@@ -3,6 +3,7 @@ from typing import TypeVar
 
 from config.enums.config_environment import ConfigEnvironment
 from config.enums.config_flavor import ConfigFlavor
+from config.models.providers.json_config_provider_config_model import ENVIRONMENT_PLACEHOLDER
 from config.providers.base_config_provider import BaseConfigProvider
 from utilities.json_loader import JsonLoader
 
@@ -31,8 +32,8 @@ class JsonConfigProvider(BaseConfigProvider):
 
         ## For ConfigFlavor.BASE with a template that contains {environment}, also resolve a plain fallback (e.g.
         ## "config.json") so a bare config file works without renaming.
-        if environment is ConfigFlavor.BASE and "{environment}" in filename_template:
-            fallback = directory_path / filename_template.replace("{environment}", "").replace("..", ".")
+        if environment is ConfigFlavor.BASE and ENVIRONMENT_PLACEHOLDER in filename_template:
+            fallback = directory_path / filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace("..", ".")
             self._file_path = primary
             self._fallback_path: Path | None = fallback
         else:

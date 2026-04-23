@@ -5,6 +5,9 @@ from pydantic import BaseModel, Field, AfterValidator
 
 from helpers.field_validator import FieldValidator
 
+ENVIRONMENT_PLACEHOLDER = "{environment}"
+_DEFAULT_FILENAME_TEMPLATE = f"config.{ENVIRONMENT_PLACEHOLDER}.json"
+
 
 class JsonConfigProviderConfigModel(BaseModel):
     """
@@ -17,8 +20,8 @@ class JsonConfigProviderConfigModel(BaseModel):
     )
 
     filename_template: str = Field(
-        description="The template for configuration file names. Optionally includes {environment} as a placeholder for the environment name. If no {environment} placeholder is included, the same file will be used for all environments.",
-        default="config.{environment}.json",
+        description=f"The template for configuration file names. Optionally includes {ENVIRONMENT_PLACEHOLDER} as a placeholder for the environment name. If no {ENVIRONMENT_PLACEHOLDER} placeholder is included, the same file will be used for all environments.",
+        default=_DEFAULT_FILENAME_TEMPLATE,
     )
 
     ## TODO: Validate shape of filename template?
