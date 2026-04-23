@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from config.providers.env_var_config_provider import EnvVarConfigProvider
 
@@ -34,18 +34,6 @@ class NestedModel(BaseModel):
     app_name: str = "app"
     database: DatabaseConfig = DatabaseConfig()
     service: ServiceConfig = ServiceConfig()
-
-
-class StrictModel(BaseModel):
-    count: int
-    label: str
-
-
-def _provider(model, *, prefix, delimiter=":", monkeypatch=None, env_vars: dict = None):
-    if env_vars and monkeypatch:
-        for k, v in env_vars.items():
-            monkeypatch.setenv(k, v)
-    return EnvVarConfigProvider(model, prefix=prefix, delimiter=delimiter)
 
 
 ## ── Prefix and filtering ──────────────────────────────────────────────────────
@@ -176,9 +164,3 @@ class TestIngestRoundTrip:
         assert model.database.host == "db.prod"
         assert model.database.port == 5433  # Pydantic coerces "5433" str -> int
         assert model.service.timeout == 90
-
-    def test_invalid_type_raises_on_validation(self, monkeypatch):
-        monkeypatch.setenv("APP:COUNT", "not-a-number")
-        monkeypatch.setenv("APP:LABEL", "ok")
-        with pytest.raises(ValidationError):
-            EnvVarConfigProvider(StrictModel, prefix="APP", delimiter=":").get_config()

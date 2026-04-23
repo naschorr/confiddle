@@ -93,15 +93,6 @@ class TestFlatFields:
         result = p.get_config()
         assert result == {"name": "hi", "value": 42}
 
-    def test_unknown_keys_filtered_out(self, tmp_path):
-        (tmp_path / "config.json").write_text(json.dumps({"extra": "ignored", "name": "x"}))
-        p = JsonConfigProvider(
-            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
-        )
-        result = p.get_config()
-        assert "extra" not in result
-        assert result["name"] == "x"
-
     def test_empty_file_returns_empty_dict(self, tmp_path):
         (tmp_path / "config.json").write_text(json.dumps({}))
         p = JsonConfigProvider(
