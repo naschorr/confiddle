@@ -28,7 +28,7 @@ class BaseConfigProvider(ABC):
 
     def _build_result(self, data: dict) -> dict:
         """
-        Filter to model fields then validate. Call at the end of every get_config implementation.
+        Filter to model fields then validate. Called automatically, subclasses should not call this directly.
         """
         filtered = {k: v for k, v in data.items() if k in self._model.model_fields}
         ModelValidator.validate_partial_model(self._model, filtered)
