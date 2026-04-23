@@ -104,7 +104,7 @@ class TestFlatFields:
         p = JsonConfigProvider(
             FlatModel, directory_path=tmp_path, filename_template="missing.json", environment=ConfigFlavor.BASE
         )
-        with pytest.raises(AssertionError, match="does not exist"):
+        with pytest.raises(FileNotFoundError, match="does not exist"):
             p.get_config()
 
 

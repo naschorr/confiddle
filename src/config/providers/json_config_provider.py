@@ -35,6 +35,7 @@ class JsonConfigProvider(BaseConfigProvider):
         return self._file_path
 
     def _get_raw_config(self) -> dict:
-        assert self._file_path.exists(), f"Config file path '{self._file_path}' does not exist"
+        if not self._file_path.exists():
+            raise FileNotFoundError(f"Config file path '{self._file_path}' does not exist")
 
         return JsonLoader.load_json(self._file_path)
