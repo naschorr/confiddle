@@ -1,3 +1,4 @@
+import functools
 from typing import Optional, TypeVar
 
 from pydantic import BaseModel
@@ -13,6 +14,7 @@ class ModelValidator:
     """
 
     @staticmethod
+    @functools.lru_cache(maxsize=None)
     def _generate_partial_model(model: type[T]) -> type[T]:
         fields = {name: (Optional[info.annotation], None) for name, info in model.model_fields.items()}
         partial_model = type(
