@@ -85,7 +85,7 @@ class TestSingleProvider:
         assert result.port == 9000
 
     def test_json_base_falls_back_to_plain_config_json(self, tmp_path: Path):
-        # No config.base.json — should fall back to config.json end-to-end
+        # No config.base.json - should fall back to config.json end-to-end
         _write_json(tmp_path / "config.json", {"host": "fallback-host", "port": 7070})
         confit = _confit(tmp_path=tmp_path, hierarchy=[ConfigFlavor.BASE])
         result = confit.load_config(AppConfig)
