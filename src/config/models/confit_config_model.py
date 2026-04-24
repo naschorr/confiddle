@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from config.enums.config_environment import ConfigEnvironment
 from config.enums.config_flavor import ConfigFlavor
-from config.models.provider_config_model import ProviderConfigModel
+from config.models.bootstrap_config_model import BootstrapConfigModel
 from config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
@@ -22,9 +22,9 @@ class ConfitConfigModel(BaseModel):
     Base model for configuring Confit
     """
 
-    bootstrap: ProviderConfigModel = Field(
+    bootstrap: BootstrapConfigModel = Field(
         description="Configuration for the Confit bootstrapper, which sets up the configuration providers and their settings so that Confit can run.",
-        default_factory=lambda: ProviderConfigModel(
+        default_factory=lambda: BootstrapConfigModel(
             json_file=JsonConfigProviderConfigModel(filename_template="confit.json"),
             env_var=EnvVarConfigProviderConfigModel(prefix="CONFIT"),
         ),

@@ -4,7 +4,7 @@ from config.models.providers.env_var_config_provider_config_model import EnvVarC
 from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
-class ProviderConfigModel(BaseModel):
+class BootstrapConfigModel(BaseModel):
     """
     Model for configuring configuration providers.
     """
