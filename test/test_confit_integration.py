@@ -123,6 +123,66 @@ class TestSingleProvider:
         assert result.debug is False  # default
 
 
+## ── Argparse ───────────────────────────────────────────────────────────────────
+
+
+class TestArgparse:
+    """End-to-end tests for the argparse provider using stdlib argparse -> vars() -> provider_data."""
+
+    def _parse(self, argv: list[str]):
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--host", default=None)
+        parser.add_argument("--port", type=int, default=None)
+        parser.add_argument("--debug", action="store_true", default=None)
+        return parser.parse_args(argv)
+
+    def test_argparse_values_loaded_into_model(self):
+        confit = _confit(hierarchy=[ConfigFlavor.ARGPARSE])
+        result = confit.load_config(
+            AppConfig, provider_data={ConfigFlavor.ARGPARSE: self._parse(["--host", "cli-host", "--port", "1234"])}
+        )
+        assert result.host == "cli-host"
+        assert result.port == 1234
+
+    def test_argparse_overrides_json(self, tmp_path: Path):
+        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
+        confit = _confit(tmp_path=tmp_path, hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE])
+        result = confit.load_config(
+            AppConfig, provider_data={ConfigFlavor.ARGPARSE: self._parse(["--host", "cli-host"])}
+        )
+        assert result.host == "cli-host"
+        assert result.port == 9000  # from JSON - argparse did not supply it
+
+    def test_argparse_and_kwarg_both_present_kwarg_wins(self, tmp_path: Path):
+        # ARGPARSE before KWARG in hierarchy - kwarg should win
+        confit = _confit(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.KWARG])
+        result = confit.load_config(
+            AppConfig,
+            provider_data={
+                ConfigFlavor.ARGPARSE: self._parse(["--host", "cli-host"]),
+                ConfigFlavor.KWARG: {"host": "kwarg-host"},
+            },
+        )
+        assert result.host == "kwarg-host"
+
+    def test_missing_argparse_data_silently_skipped(self, tmp_path: Path):
+        # ARGPARSE in hierarchy but no provider_data supplied - should not error
+        _write_json(tmp_path / "config.base.json", {"host": "file-host"})
+        confit = _confit(tmp_path=tmp_path, hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE])
+        result = confit.load_config(AppConfig)
+        assert result.host == "file-host"
+
+    def test_unknown_argparse_keys_filtered_out(self):
+        confit = _confit(hierarchy=[ConfigFlavor.ARGPARSE])
+        result = confit.load_config(
+            AppConfig, provider_data={ConfigFlavor.ARGPARSE: {"host": "h", "unrecognised": "x"}}
+        )
+        assert result.host == "h"
+        assert not hasattr(result, "unrecognised")
+
+
 ## ── Disabled providers ─────────────────────────────────────────────────────────
 
 
