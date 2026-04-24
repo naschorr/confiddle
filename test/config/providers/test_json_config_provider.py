@@ -200,6 +200,17 @@ class TestFilenameTemplates:
         )
         assert p.file_path == tmp_path / "config.base.json"
 
+    def test_file_path_for_non_base_environment_is_direct_substitution(self, tmp_path):
+        # For non-BASE envs, file_path is just the substituted template — no fallback involved
+        (tmp_path / "config.dev.json").write_text(json.dumps({}))
+        p = JsonConfigProvider(
+            FlatModel,
+            directory_path=tmp_path,
+            filename_template="config.{environment}.json",
+            environment=ConfigEnvironment.DEV,
+        )
+        assert p.file_path == tmp_path / "config.dev.json"
+
 
 ## ── Type coercion and validation ─────────────────────────────────────────────
 
