@@ -84,6 +84,14 @@ class TestSingleProvider:
         assert result.host == "file-host"
         assert result.port == 9000
 
+    def test_json_base_falls_back_to_plain_config_json(self, tmp_path: Path):
+        # No config.base.json — should fall back to config.json end-to-end
+        _write_json(tmp_path / "config.json", {"host": "fallback-host", "port": 7070})
+        confit = _confit(tmp_path=tmp_path, hierarchy=[ConfigFlavor.BASE])
+        result = confit.load_config(AppConfig)
+        assert result.host == "fallback-host"
+        assert result.port == 7070
+
     def test_env_only_loads_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
         monkeypatch.setenv("APP:PORT", "7000")
