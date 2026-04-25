@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from config.providers.base_config_provider import BaseConfigProvider
+from confit.config.providers.base_config_provider import BaseConfigProvider
 
 from pydantic import BaseModel
 

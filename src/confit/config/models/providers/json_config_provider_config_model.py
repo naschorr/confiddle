@@ -3,7 +3,7 @@ from typing import Optional, Annotated
 
 from pydantic import BaseModel, Field, AfterValidator
 
-from helpers.field_validator import FieldValidator
+from confit.helpers.field_validator import FieldValidator
 
 ENVIRONMENT_PLACEHOLDER = "{environment}"
 _DEFAULT_FILENAME_TEMPLATE = f"config.{ENVIRONMENT_PLACEHOLDER}.json"

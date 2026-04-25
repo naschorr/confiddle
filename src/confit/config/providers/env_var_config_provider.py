@@ -1,8 +1,8 @@
 import os
 from typing import Optional, TypeVar
 
-from config.providers.base_config_provider import BaseConfigProvider
-from helpers.field_annotation_helper import get_field_annotation, is_container_annotation, unwrap_annotation
+from confit.config.providers.base_config_provider import BaseConfigProvider
+from confit.helpers.field_annotation_helper import get_field_annotation, is_container_annotation, unwrap_annotation
 
 from pydantic import BaseModel
 

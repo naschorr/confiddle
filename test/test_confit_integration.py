@@ -12,11 +12,11 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.models.confit_config_model import ConfitConfigModel
-from config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.confit_config_model import ConfitConfigModel
+from confit.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 from confit import Confit
 
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
 class BootstrapConfigModel(BaseModel):

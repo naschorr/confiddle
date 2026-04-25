@@ -1,7 +1,7 @@
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from config.providers.base_config_provider import BaseConfigProvider
+from confit.config.providers.base_config_provider import BaseConfigProvider
 
 
 ## ── Stub ───────────────────────────────────────────────────────────────────────

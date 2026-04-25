@@ -2,9 +2,9 @@ from typing import Optional, TypeVar
 
 from pydantic import BaseModel
 
-from config.config_manager import ConfigManager
-from config.enums.config_flavor import ConfigFlavor
-from config.models.confit_config_model import ConfitConfigModel
+from confit.config.config_manager import ConfigManager
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.confit_config_model import ConfitConfigModel
 
 T = TypeVar("T", bound=BaseModel)
 

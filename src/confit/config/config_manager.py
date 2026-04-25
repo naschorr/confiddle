@@ -2,15 +2,15 @@ from typing import Optional, TypeVar, cast
 
 from pydantic import BaseModel
 
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.models.confit_config_model import ConfitConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from config.providers.argparse_config_provider import ArgparseConfigProvider
-from config.providers.base_config_provider import BaseConfigProvider
-from config.providers.env_var_config_provider import EnvVarConfigProvider
-from config.providers.json_config_provider import JsonConfigProvider
-from config.providers.kwarg_config_provider import KwargConfigProvider
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.confit_config_model import ConfitConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.providers.argparse_config_provider import ArgparseConfigProvider
+from confit.config.providers.base_config_provider import BaseConfigProvider
+from confit.config.providers.env_var_config_provider import EnvVarConfigProvider
+from confit.config.providers.json_config_provider import JsonConfigProvider
+from confit.config.providers.kwarg_config_provider import KwargConfigProvider
 
 T = TypeVar("T", bound=BaseModel)
 

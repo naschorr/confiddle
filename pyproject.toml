@@ -1,3 +1,17 @@
 [tool.pytest.ini_options]
 testpaths = ["test"]
 pythonpath = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "confit"
+version = "0.1.0"
+description = "Hierarchical configuration manager powered by Pydantic"
+requires-python = ">=3.9"
+dependencies = ["pydantic>=2.12", "typing_extensions>=4.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/confit"]

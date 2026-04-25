@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from config.models.confit_config_model import ConfitConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from config.config_manager import ConfigManager
+from confit.config.models.confit_config_model import ConfitConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.config_manager import ConfigManager
 
 
 class SampleModel(BaseModel):

@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
 
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.models.bootstrap_config_model import BootstrapConfigModel
-from config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.bootstrap_config_model import BootstrapConfigModel
+from confit.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
 _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV

@@ -5,9 +5,9 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.providers.json_config_provider import JsonConfigProvider
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.providers.json_config_provider import JsonConfigProvider
 
 ## ── Setup ─────────────────────────────────────────────────────────
 

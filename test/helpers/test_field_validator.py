@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from helpers.field_validator import FieldValidator
+from confit.helpers.field_validator import FieldValidator
 
 
 class TestCreateDirectoryValidator:

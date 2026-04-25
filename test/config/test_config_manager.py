@@ -5,11 +5,11 @@ from unittest.mock import patch
 import pytest
 from pydantic import BaseModel
 
-from config.config_manager import ConfigManager
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.models.confit_config_model import ConfitConfigModel
-from config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confit.config.config_manager import ConfigManager
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.confit_config_model import ConfitConfigModel
+from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
 class SampleModel(BaseModel):
@@ -70,7 +70,7 @@ class TestJsonProvider:
 
     def test_skips_json_when_environment_mismatch(self, config_dir: Path):
         # hierarchy default includes DEV env; we set environment=PROD so DEV file is skipped
-        from config.enums.config_environment import ConfigEnvironment
+        from confit.config.enums.config_environment import ConfigEnvironment
 
         dev_file = config_dir / "config.dev.json"
         dev_file.write_text(json.dumps({"name": "from_dev"}))

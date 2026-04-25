@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import TypeVar
 
-from config.enums.config_environment import ConfigEnvironment
-from config.enums.config_flavor import ConfigFlavor
-from config.models.providers.json_config_provider_config_model import ENVIRONMENT_PLACEHOLDER
-from config.providers.base_config_provider import BaseConfigProvider
-from utilities.json_loader import JsonLoader
+from confit.config.enums.config_environment import ConfigEnvironment
+from confit.config.enums.config_flavor import ConfigFlavor
+from confit.config.models.providers.json_config_provider_config_model import ENVIRONMENT_PLACEHOLDER
+from confit.config.providers.base_config_provider import BaseConfigProvider
+from confit.utilities.json_loader import JsonLoader
 
 from pydantic import BaseModel
 

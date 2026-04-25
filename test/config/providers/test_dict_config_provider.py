@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-from config.providers.argparse_config_provider import ArgparseConfigProvider
-from config.providers.dict_config_provider import DictConfigProvider
-from config.providers.kwarg_config_provider import KwargConfigProvider
+from confit.config.providers.argparse_config_provider import ArgparseConfigProvider
+from confit.config.providers.dict_config_provider import DictConfigProvider
+from confit.config.providers.kwarg_config_provider import KwargConfigProvider
 
 
 class SampleModel(BaseModel):
