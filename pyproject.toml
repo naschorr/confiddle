@@ -9,9 +9,49 @@ build-backend = "hatchling.build"
 [project]
 name = "confit"
 version = "0.1.0"
+authors = [
+    { name="Nick Schorr", email="naschorr@gmail.com" },
+]
 description = "Hierarchical configuration manager powered by Pydantic"
-requires-python = ">=3.9"
-dependencies = ["pydantic>=2.12", "typing_extensions>=4.6"]
+readme = "README.md"
+requires-python = ">= 3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Pydantic :: 2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "pydantic>=2.12",
+    "typing_extensions>=4.6"
+]
+keywords = [
+    "config",
+    "configuration",
+    "hierarchy",
+    "dotnet configuration",
+    "appsettings",
+    "pydantic",
+    "model configuration"
+]
+
+[project.urls]
+source = "https://github.com/naschorr/confit"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+]
+deploy = [
+    "hatchling>=1.29.0",
+    "build>=1.4.4",
+    "twine>=6.2.0"
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/confit"]
