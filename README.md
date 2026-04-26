@@ -52,7 +52,7 @@ A web service that layers three configuration sources - base JSON defaults, a pr
 ```
 
 ```shell
-## Injected by the secrets manager
+## Injected by the platform's secrets manager
 export MYAPP:ADMIN_PASSWORD="hunter2"
 ```
 
@@ -72,17 +72,19 @@ class AppConfig(BaseModel):
 
 ```python
 ## main.py
-from confit import Confit, ConfigEnvironment, JsonConfigProviderConfigModel, EnvVarConfigProviderConfigModel
+from confit import Confit, ConfitConfigModel, ConfigEnvironment, JsonConfigProviderConfigModel, EnvVarConfigProviderConfigModel
 from app_config import AppConfig
 
 confit = Confit(
-    ## `directory_path="."` searches for config JSON files at the current working directory
-    json_file=JsonConfigProviderConfigModel(directory_path="."),
-    ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
-    env_var=EnvVarConfigProviderConfigModel(prefix="MYAPP"),
-    ## This tells it to only load production configurations, like config.prod.json above.
-    ## Note that it'll still load the base configurations regardless, like config.json above.
-    environment=ConfigEnvironment.PROD,
+    ConfitConfigModel(
+        ## `directory_path="."` searches for config JSON files at the current working directory
+        json_file=JsonConfigProviderConfigModel(directory_path="."),
+        ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
+        env_var=EnvVarConfigProviderConfigModel(prefix="MYAPP"),
+        ## This tells it to only load production configurations, like config.prod.json above.
+        ## Note that it'll still load the base configurations regardless, like config.json above.
+        environment=ConfigEnvironment.PROD,
+    )
 )
 
 config = confit.load_config(AppConfig)
@@ -90,6 +92,7 @@ config = confit.load_config(AppConfig)
 ## State of `config` after loading:
 ## config.app_name       -> "my-web-service"  (from config.json)
 ## config.workers        -> 4                 (from config.json)
+## config.admin_username -> "admin"           (from config.json)
 ## config.host           -> "1.2.3.4"         (from config.prod.json)
 ## config.port           -> 80                (from config.prod.json)
 ## config.debug          -> False             (from config.prod.json)

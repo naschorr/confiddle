@@ -33,11 +33,5 @@ class Confit:
 
     ## Methods
 
-    def load_config(
-        self,
-        config_model: type[T],
-        *,
-        provider_data: Optional[dict[ConfigFlavor, dict]] = None,
-        base_data: Optional[dict] = None,
-    ) -> T:
-        return self._config_manager.get_config(config_model, provider_data=provider_data, base_data=base_data)
+    def load_config(self, config_model: type[T], *, provider_data: dict[ConfigFlavor, dict] = {}) -> T:
+        return self._config_manager.get_config(config_model, provider_data=provider_data)

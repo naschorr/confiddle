@@ -60,10 +60,3 @@ class TestLoadConfig:
         )
         result = confit.load_config(SampleModel, provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}})
         assert result.name == "from_kwarg"
-
-    def test_base_data_seeded(self, config_dir: Path):
-        confit = Confit(
-            confit_config=ConfitConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
-        )
-        result = confit.load_config(SampleModel, base_data={"value": 42})
-        assert result.value == 42
