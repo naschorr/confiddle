@@ -4,9 +4,9 @@ Hierarchical configuration for Python that's inspired by .NET and powered by Pyd
 
 ## What is it?
 
-It fiddles with the configuration so you don't have to!
+It's a hierarchical configuration loader that should be familiar to folks in [dotnet](https://learn.microsoft.com/en-us/dotnet/core/extensions/configuration)-land, but adapted for Python and leveraging Pydantic to build and validate the configuration data. Confiddle fiddles with the configuration so you don't have to!
 
-Configuration can be loaded dynamically from a variety of sources:
+Configurations can be loaded dynamically from a variety of sources:
 
 - JSON configuration files (ex: `config.json`)
 - Environment-specific JSON configuration files (ex: `config.dev.json` or `config.prod.json`)
@@ -14,9 +14,9 @@ Configuration can be loaded dynamically from a variety of sources:
 - [Argparse](https://docs.python.org/3/library/argparse.html)
 - `**kwargs`
 
-Those configurations are then merged together (with later configurations overriding earlier ones), and used to build up the provided Pydantic model.
+Those configurations are then merged together (shallowly, with later configurations overriding earlier ones), and used to build up the provided Pydantic model.
 
-This is all customizable too! With some easy tweaks you can configure which configuration sources are loaded, what order they're loaded in, and the environment that your program is targeting. Confiddle will even bootstrap itself, so you can configure Confiddle's behavior the same way you'd load any other set of configurations.
+This is all customizable, too! With some easy tweaks, you can configure which configuration sources are loaded, what order they're loaded in, and the environment that your program is targeting. Confiddle will even bootstrap itself, so you can configure Confiddle's behavior the same way you'd load any other set of configurations.
 
 ## Installation
 
@@ -101,4 +101,4 @@ config = confiddle.load_config(AppConfig)
 ## config.admin_password -> "hunter2"         (from MYAPP:ADMIN_PASSWORD env var)
 ```
 
-And that's it! Confiddle uses the configuration files and Pydantic models that you're already using, but formalizes the ingest process, making all the magic happen in just a few lines of code.
+And that's it! Confiddle uses the configuration files and Pydantic models that you're already using, but formalizes the ingestion process, making all the magic happen in just a few lines of code.
