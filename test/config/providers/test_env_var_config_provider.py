@@ -3,7 +3,7 @@ import os
 import pytest
 from pydantic import BaseModel
 
-from confit.config.providers.env_var_config_provider import EnvVarConfigProvider
+from confiddle.config.providers.env_var_config_provider import EnvVarConfigProvider
 
 ## ── Setup ─────────────────────────────────────────────────────────
 

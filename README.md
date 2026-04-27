@@ -1,8 +1,10 @@
-# confit
+# confiddle
 
 Hierarchical configuration for Python that's inspired by .NET and powered by Pydantic.
 
 ## What is it?
+
+It fiddles with the configuration so you don't have to!
 
 Configuration can be loaded dynamically from a variety of sources:
 
@@ -14,11 +16,11 @@ Configuration can be loaded dynamically from a variety of sources:
 
 Those configurations are then merged together (with later configurations overriding earlier ones), and used to build up the provided Pydantic model.
 
-This is all customizable too! With some easy tweaks you can configure which configuration sources are loaded, what order they're loaded in, and the environment that your program is targeting. Confit will even bootstrap itself, so you can configure Confit's behavior the same way you'd load any other set of configurations.
+This is all customizable too! With some easy tweaks you can configure which configuration sources are loaded, what order they're loaded in, and the environment that your program is targeting. Confiddle will even bootstrap itself, so you can configure Confiddle's behavior the same way you'd load any other set of configurations.
 
 ## Installation
 
-`pip install confit` (preferably inside your project's venv 🙂)
+`pip install confiddle` (preferably inside your project's venv 🙂)
 
 ## Example
 
@@ -72,11 +74,11 @@ class AppConfig(BaseModel):
 
 ```python
 ## main.py
-from confit import Confit, ConfitConfigModel, ConfigEnvironment, JsonConfigProviderConfigModel, EnvVarConfigProviderConfigModel
+from confiddle import Confiddle, ConfiddleConfigModel, ConfigEnvironment, JsonConfigProviderConfigModel, EnvVarConfigProviderConfigModel
 from app_config import AppConfig
 
-confit = Confit(
-    ConfitConfigModel(
+confiddle = Confiddle(
+    ConfiddleConfigModel(
         ## `directory_path="."` searches for config JSON files at the current working directory
         json_file=JsonConfigProviderConfigModel(directory_path="."),
         ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
@@ -87,7 +89,7 @@ confit = Confit(
     )
 )
 
-config = confit.load_config(AppConfig)
+config = confiddle.load_config(AppConfig)
 
 ## State of `config` after loading:
 ## config.app_name       -> "my-web-service"  (from config.json)
@@ -99,4 +101,4 @@ config = confit.load_config(AppConfig)
 ## config.admin_password -> "hunter2"         (from MYAPP:ADMIN_PASSWORD env var)
 ```
 
-And that's it! Confit uses the configuration files and Pydantic models that you're already using, but formalizes the ingest process, making all the magic happen in just a few lines of code.
+And that's it! Confiddle uses the configuration files and Pydantic models that you're already using, but formalizes the ingest process, making all the magic happen in just a few lines of code.

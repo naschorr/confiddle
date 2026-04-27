@@ -7,7 +7,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "confit"
+name = "confiddle"
 version = "0.1.0"
 authors = [
     { name="Nick Schorr", email="naschorr@gmail.com" },
@@ -40,7 +40,7 @@ keywords = [
 ]
 
 [project.urls]
-source = "https://github.com/naschorr/confit"
+source = "https://github.com/naschorr/confiddle"
 
 [project.optional-dependencies]
 dev = [
@@ -53,4 +53,4 @@ deploy = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/confit"]
+packages = ["src/confiddle"]

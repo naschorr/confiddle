@@ -2,32 +2,34 @@ from typing import Optional, TypeVar
 
 from pydantic import BaseModel
 
-from confit.config.config_manager import ConfigManager
-from confit.config.enums.config_flavor import ConfigFlavor
-from confit.config.models.confit_config_model import ConfitConfigModel
+from confiddle.config.config_manager import ConfigManager
+from confiddle.config.enums.config_flavor import ConfigFlavor
+from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class Confit:
+class Confiddle:
 
     ## Lifecycle
 
-    def __init__(self, confit_config: Optional[ConfitConfigModel] = None):
+    def __init__(self, confiddle_config: Optional[ConfiddleConfigModel] = None):
         config_manager = ConfigManager()
 
-        ## Two pass generation of ConfitConfigModel
+        ## Two pass generation of ConfiddleConfigModel
         ## 1: Load available configuration from low context providers (ex: env vars and kwargs) to bootstrap
-        ##    ConfitConfigModel with basic configuration data
+        ##    ConfiddleConfigModel with basic configuration data
         ## 2: Load available configuration again, but now with all possible providers available (assuming configuration
         ##    data was found in the first pass).
 
         ## TODO: Skip second pass if we're in a bad state after the first pass.
-        partial = config_manager.get_config(ConfitConfigModel, base_data=dict(confit_config) if confit_config else None)
-        config_manager.confit_config = partial
+        partial = config_manager.get_config(
+            ConfiddleConfigModel, base_data=dict(confiddle_config) if confiddle_config else None
+        )
+        config_manager.confiddle_config = partial
 
-        final = config_manager.get_config(ConfitConfigModel, base_data=dict(partial))
-        config_manager.confit_config = final
+        final = config_manager.get_config(ConfiddleConfigModel, base_data=dict(partial))
+        config_manager.confiddle_config = final
 
         self._config_manager = config_manager
 

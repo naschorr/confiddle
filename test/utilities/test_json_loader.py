@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from confit.utilities.json_loader import JsonLoader
+from confiddle.utilities.json_loader import JsonLoader
 
 
 def test_loads_valid_json(tmp_path: Path):

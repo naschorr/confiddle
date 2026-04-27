@@ -1,7 +1,7 @@
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from confit.helpers.model_validator import ModelValidator
+from confiddle.helpers.model_validator import ModelValidator
 
 
 class SampleModel(BaseModel):

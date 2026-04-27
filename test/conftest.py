@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-from confit.config.models.confit_config_model import ConfitConfigModel
-from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confit.config.config_manager import ConfigManager
+from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
+from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.config_manager import ConfigManager
 
 
 class SampleModel(BaseModel):
@@ -34,5 +34,7 @@ def config_file(config_dir: Path) -> Path:
 @pytest.fixture
 def bootstrapped_manager(config_dir: Path) -> ConfigManager:
     config_manager = ConfigManager()
-    config_manager.confit_config = ConfitConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
+    config_manager.confiddle_config = ConfiddleConfigModel(
+        json_file=JsonConfigProviderConfigModel(directory_path=config_dir)
+    )
     return config_manager

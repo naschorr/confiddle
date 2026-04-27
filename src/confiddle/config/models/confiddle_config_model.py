@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
 
-from confit.config.enums.config_environment import ConfigEnvironment
-from confit.config.enums.config_flavor import ConfigFlavor
-from confit.config.models.bootstrap_config_model import BootstrapConfigModel
-from confit.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from confit.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.enums.config_environment import ConfigEnvironment
+from confiddle.config.enums.config_flavor import ConfigFlavor
+from confiddle.config.models.bootstrap_config_model import BootstrapConfigModel
+from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
+from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 
 
 _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV
@@ -17,16 +17,16 @@ _DEFAULT_HIERARCHY = [
 ]
 
 
-class ConfitConfigModel(BaseModel):
+class ConfiddleConfigModel(BaseModel):
     """
-    Base model for configuring Confit
+    Base model for configuring Confiddle
     """
 
     bootstrap: BootstrapConfigModel = Field(
-        description="Configuration for the Confit bootstrapper, which sets up the configuration providers and their settings so that Confit can run.",
+        description="Configuration for the Confiddle bootstrapper, which sets up the configuration providers and their settings so that Confiddle can run.",
         default_factory=lambda: BootstrapConfigModel(
-            json_file=JsonConfigProviderConfigModel(filename_template="confit.json"),
-            env_var=EnvVarConfigProviderConfigModel(prefix="CONFIT"),
+            json_file=JsonConfigProviderConfigModel(filename_template="confiddle.json"),
+            env_var=EnvVarConfigProviderConfigModel(prefix="CONFIDDLE"),
         ),
     )
 

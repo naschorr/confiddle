@@ -3,7 +3,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from confit.helpers.model_validator import ModelValidator
+from confiddle.helpers.model_validator import ModelValidator
 
 T = TypeVar("T", bound=BaseModel)
 

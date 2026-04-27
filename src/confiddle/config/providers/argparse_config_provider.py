@@ -1,7 +1,7 @@
 import argparse
 from typing import TypeVar, Union
 
-from confit.config.providers.dict_config_provider import DictConfigProvider
+from confiddle.config.providers.dict_config_provider import DictConfigProvider
 
 from pydantic import BaseModel
 
