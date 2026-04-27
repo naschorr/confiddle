@@ -27,8 +27,7 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE"]
 dependencies = [
-    "pydantic>=2.12",
-    "typing_extensions>=4.6"
+    "pydantic>=2.12"
 ]
 keywords = [
     "config",
