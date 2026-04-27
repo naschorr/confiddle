@@ -26,7 +26,7 @@ This is all customizable too! With some easy tweaks you can configure which conf
 
 A web service that layers three configuration sources - base JSON defaults, a production-specific JSON override, and a runtime environment variable.
 
-```json
+```jsonc
 // config.json - shared across all environments
 {
     "app_name": "my-web-service",
@@ -35,7 +35,7 @@ A web service that layers three configuration sources - base JSON defaults, a pr
 }
 ```
 
-```json
+```jsonc
 // config.dev.json - local development overrides
 {
     "host": "localhost",
@@ -44,7 +44,7 @@ A web service that layers three configuration sources - base JSON defaults, a pr
 }
 ```
 
-```json
+```jsonc
 // config.prod.json - production overrides
 {
     "host": "1.2.3.4",
