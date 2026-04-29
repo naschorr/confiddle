@@ -8,7 +8,7 @@ from confiddle.config.models.providers.dict_config_provider_config_model import 
 from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 from confiddle.config.providers.argparse_config_provider import ArgparseConfigProvider
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.config.providers.dict_config_provider import DictConfigProvider

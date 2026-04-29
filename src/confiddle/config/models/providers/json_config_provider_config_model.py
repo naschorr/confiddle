@@ -3,7 +3,7 @@ from typing import Optional, Annotated
 
 from pydantic import Field, AfterValidator
 
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 from confiddle.helpers.field_validator import FieldValidator
 
 ENVIRONMENT_PLACEHOLDER = "{environment}"

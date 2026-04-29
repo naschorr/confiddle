@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 
 _DEFAULT_ENV_VAR_DELIMITER = ":"
 _EXAMPLE_ENV_VAR_DELIMITERS = [":", "__"]

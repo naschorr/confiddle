@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 
 
 class DictProviderConfig(BaseProviderConfigModel):

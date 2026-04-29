@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from confiddle.config.config_manager import ConfigManager
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 
 T = TypeVar("T", bound=BaseModel)
 

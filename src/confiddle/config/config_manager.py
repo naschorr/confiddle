@@ -10,7 +10,7 @@ from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.utilities.dict_merger import DictMerger
 

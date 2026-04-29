@@ -4,7 +4,7 @@ import argparse
 
 from pydantic import ConfigDict, Field
 
-from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 
 
 class ArgparseProviderConfig(BaseProviderConfigModel):
