@@ -5,18 +5,13 @@ from pydantic import BaseModel
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.enums.merge_strategy import MergeStrategy
+from confiddle.config.factories.config_provider_factory import ConfigProviderFactory
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
 from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
-from confiddle.config.providers.argparse_config_provider import ArgparseConfigProvider
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
-from confiddle.config.providers.dict_config_provider import DictConfigProvider
-from confiddle.config.providers.env_var_config_provider import EnvVarConfigProvider
-from confiddle.config.providers.json_config_provider import JsonConfigProvider
-from confiddle.config.providers.kwarg_config_provider import KwargConfigProvider
 from confiddle.utilities.dict_merger import DictMerger
 
 T = TypeVar("T", bound=BaseModel)
@@ -28,6 +23,7 @@ class ConfigManager:
 
     def __init__(self):
         self._confiddle_config: Optional[ConfiddleConfigModel] = None
+        self._factory = ConfigProviderFactory()
 
     ## Properties
 
@@ -70,8 +66,9 @@ class ConfigManager:
         self, model: type[T], provider_configs: list[BaseProviderConfigModel]
     ) -> list[BaseConfigProvider]:
         confiddle_config = self._confiddle_config or ConfiddleConfigModel()
-        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
+        is_bootstrap = model is ConfiddleConfigModel
 
+        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
         for provider_config in provider_configs:
             if isinstance(provider_config, ArgparseProviderConfig):
                 by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(provider_config)
@@ -80,87 +77,30 @@ class ConfigManager:
             elif isinstance(provider_config, DictProviderConfig):
                 by_flavor.setdefault(ConfigFlavor.DICT, []).append(provider_config)
 
-        result = []
+        result: list[BaseConfigProvider] = []
+        json_config = confiddle_config.bootstrap.json_file if is_bootstrap else confiddle_config.json_file
+        env_config = confiddle_config.bootstrap.env_var if is_bootstrap else confiddle_config.env_var
 
         for item in confiddle_config.hierarchy:
-            result.extend(self._build_provider(item, model, confiddle_config, by_flavor))
+            if item is ConfigFlavor.JSON:
+                if json_config.directory_path is not None:
+                    provider = self._factory.build_provider(model, json_config, environment=None)
+                    if provider.file_path.exists():
+                        result.append(provider)
+            elif isinstance(item, ConfigEnvironment):
+                if item is confiddle_config.environment and json_config.directory_path is not None:
+                    provider = self._factory.build_provider(model, json_config, environment=item)
+                    if provider.file_path.exists():
+                        result.append(provider)
+            elif item is ConfigFlavor.ENV_VAR:
+                result.append(self._factory.build_provider(model, env_config))
+            elif item is ConfigFlavor.ARGPARSE:
+                result.extend(
+                    self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.ARGPARSE, [])
+                )
+            elif item is ConfigFlavor.KWARG:
+                result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.KWARG, []))
+            elif item is ConfigFlavor.DICT:
+                result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.DICT, []))
 
         return result
-
-    def _build_provider(
-        self,
-        item: ConfigFlavor | ConfigEnvironment,
-        model: type[T],
-        confiddle_config: ConfiddleConfigModel,
-        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]],
-    ) -> list[BaseConfigProvider]:
-        if item is ConfigFlavor.JSON:
-            json_config = (
-                confiddle_config.bootstrap.json_file if model is ConfiddleConfigModel else confiddle_config.json_file
-            )
-            return self._build_json_provider(model, None, json_config)
-        elif isinstance(item, ConfigEnvironment):
-            if item is not confiddle_config.environment:
-                return []
-            json_config = (
-                confiddle_config.bootstrap.json_file if model is ConfiddleConfigModel else confiddle_config.json_file
-            )
-            return self._build_json_provider(model, item, json_config)
-        elif item is ConfigFlavor.ENV_VAR:
-            return [self._build_env_provider(model, confiddle_config)]
-        elif item is ConfigFlavor.ARGPARSE:
-            return self._build_argparse_providers(model, by_flavor.get(ConfigFlavor.ARGPARSE, []))
-        elif item is ConfigFlavor.KWARG:
-            return self._build_kwarg_providers(model, by_flavor.get(ConfigFlavor.KWARG, []))
-        elif item is ConfigFlavor.DICT:
-            return self._build_dict_providers(model, by_flavor.get(ConfigFlavor.DICT, []))
-
-        return []
-
-    def _build_json_provider(
-        self,
-        model: type[T],
-        environment: Optional[ConfigEnvironment],
-        json_config: JsonConfigProviderConfigModel,
-    ) -> list[BaseConfigProvider]:
-        if json_config.directory_path is None:
-            return []
-
-        provider = JsonConfigProvider(model, json_config, environment=environment)
-
-        if not provider.file_path.exists():
-            return []
-
-        return [provider]
-
-    def _build_env_provider(
-        self,
-        model: type[T],
-        confiddle_config: ConfiddleConfigModel,
-    ) -> EnvVarConfigProvider:
-        env_config = confiddle_config.bootstrap.env_var if model is ConfiddleConfigModel else confiddle_config.env_var
-
-        return EnvVarConfigProvider(model, env_config)
-
-    def _build_argparse_providers(
-        self,
-        model: type[T],
-        configs: list[ArgparseProviderConfig],
-    ) -> list[BaseConfigProvider]:
-        return [ArgparseConfigProvider(model, apc) for apc in configs]
-
-    def _build_kwarg_providers(
-        self,
-        model: type[T],
-        configs: list[KwargProviderConfig],
-    ) -> list[BaseConfigProvider]:
-        return [KwargConfigProvider(model, kpc) for kpc in configs]
-
-    def _build_dict_providers(
-        self,
-        model: type[T],
-        configs: Optional[list[DictProviderConfig]],
-    ) -> list[BaseConfigProvider]:
-        if not configs:
-            return []
-        return [DictConfigProvider(model, cfg) for cfg in configs]
