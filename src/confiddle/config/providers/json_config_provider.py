@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
-from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.json_config_provider_config_model import (
     ENVIRONMENT_PLACEHOLDER,
     JsonConfigProviderConfigModel,
@@ -26,31 +25,24 @@ class JsonConfigProvider(BaseConfigProvider):
         model: type[T],
         config: JsonConfigProviderConfigModel,
         *,
-        environment: ConfigFlavor | ConfigEnvironment,
+        environment: Optional[ConfigEnvironment] = None,
     ):
         if config.directory_path is None:
             raise ValueError("JsonConfigProvider requires a directory_path in its config")
 
         super().__init__(model)
 
-        primary = config.directory_path / config.filename_template.format(environment=environment.value)
-
-        ## For ConfigFlavor.JSON with a template that contains {environment}, also resolve a plain fallback (e.g.
-        ## "config.json") so a bare config file works without renaming.
-        if environment is ConfigFlavor.JSON and ENVIRONMENT_PLACEHOLDER in config.filename_template:
-            fallback = config.directory_path / config.filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace(
-                "..", "."
+        if environment is None:
+            filename = config.filename_template.replace(f".{ENVIRONMENT_PLACEHOLDER}", "").replace(
+                f"{ENVIRONMENT_PLACEHOLDER}.", ""
             )
-            self._file_path = primary
-            self._fallback_path: Path | None = fallback
         else:
-            self._file_path = primary
-            self._fallback_path = None
+            filename = config.filename_template.format(environment=environment.value)
+
+        self._file_path = config.directory_path / filename
 
     @property
     def file_path(self) -> Path:
-        if self._fallback_path is not None and not self._file_path.exists() and self._fallback_path.exists():
-            return self._fallback_path
         return self._file_path
 
     def _get_raw_config(self) -> dict:

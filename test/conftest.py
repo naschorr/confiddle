@@ -26,7 +26,7 @@ def config_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def config_file(config_dir: Path) -> Path:
-    path = config_dir / "config.base.json"
+    path = config_dir / "config.json"
     path.write_text(json.dumps({"name": "from_file"}))
     return path
 

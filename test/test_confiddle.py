@@ -44,7 +44,7 @@ class TestLoadConfig:
         assert isinstance(result, SampleModel)
 
     def test_loads_from_json_file(self, config_dir: Path):
-        (config_dir / "config.base.json").write_text(json.dumps({"name": "from_file"}))
+        (config_dir / "config.json").write_text(json.dumps({"name": "from_file"}))
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
                 json_file=JsonConfigProviderConfigModel(directory_path=config_dir),

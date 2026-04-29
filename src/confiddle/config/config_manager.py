@@ -72,13 +72,13 @@ class ConfigManager:
         confiddle_config = self._confiddle_config or ConfiddleConfigModel()
         by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
 
-        for pc in provider_configs:
-            if isinstance(pc, ArgparseProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(pc)
-            elif isinstance(pc, KwargProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.KWARG, []).append(pc)
-            elif isinstance(pc, DictProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.DICT, []).append(pc)
+        for provider_config in provider_configs:
+            if isinstance(provider_config, ArgparseProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(provider_config)
+            elif isinstance(provider_config, KwargProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.KWARG, []).append(provider_config)
+            elif isinstance(provider_config, DictProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.DICT, []).append(provider_config)
 
         result = []
 
@@ -98,7 +98,7 @@ class ConfigManager:
             json_config = (
                 confiddle_config.bootstrap.json_file if model is ConfiddleConfigModel else confiddle_config.json_file
             )
-            return self._build_json_provider(model, ConfigFlavor.JSON, json_config)
+            return self._build_json_provider(model, None, json_config)
         elif isinstance(item, ConfigEnvironment):
             if item is not confiddle_config.environment:
                 return []
@@ -120,13 +120,13 @@ class ConfigManager:
     def _build_json_provider(
         self,
         model: type[T],
-        config_key: ConfigFlavor | ConfigEnvironment,
+        environment: Optional[ConfigEnvironment],
         json_config: JsonConfigProviderConfigModel,
     ) -> list[BaseConfigProvider]:
         if json_config.directory_path is None:
             return []
 
-        provider = JsonConfigProvider(model, json_config, environment=config_key)
+        provider = JsonConfigProvider(model, json_config, environment=environment)
 
         if not provider.file_path.exists():
             return []

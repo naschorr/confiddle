@@ -113,7 +113,7 @@ class TestProviderData:
 class TestHierarchyOrder:
     def test_later_provider_overwrites_earlier(self, config_dir: Path):
         # BASE json sets name="from_base"; KWARG (later in hierarchy) should win
-        (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
+        (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
@@ -125,7 +125,7 @@ class TestHierarchyOrder:
 
     def test_env_json_overwrites_base_json(self, config_dir: Path):
         # BASE loads first, then DEV env file - DEV should win
-        (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
+        (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
         (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
 
         config_manager = ConfigManager()
@@ -138,7 +138,7 @@ class TestHierarchyOrder:
         assert result.name == "from_dev"
 
     def test_argparse_overwrites_env_json(self, config_dir: Path):
-        (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
+        (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
@@ -168,7 +168,7 @@ class TestHierarchyOrder:
 
     def test_custom_hierarchy_order_respected(self, config_dir: Path):
         # Reversed: KWARG first, BASE last - BASE json should win
-        (config_dir / "config.base.json").write_text(json.dumps({"name": "from_base"}))
+        (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(

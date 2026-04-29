@@ -80,19 +80,11 @@ class TestSingleProvider:
     """Confiddle with one provider in the hierarchy loads only from that source."""
 
     def test_json_base_only_loads_from_file(self, tmp_path: Path):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
+        _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
         assert result.port == 9000
-
-    def test_json_base_falls_back_to_plain_config_json(self, tmp_path: Path):
-        # No config.base.json - should fall back to config.json end-to-end
-        _write_json(tmp_path / "config.json", {"host": "fallback-host", "port": 7070})
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
-        result = confiddle.load_config(AppConfig)
-        assert result.host == "fallback-host"
-        assert result.port == 7070
 
     def test_env_only_loads_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
@@ -104,7 +96,7 @@ class TestSingleProvider:
 
     def test_kwarg_only_loads_from_kwargs(self, tmp_path: Path):
         # JSON file exists but should be ignored
-        _write_json(tmp_path / "config.base.json", {"host": "should-be-ignored"})
+        _write_json(tmp_path / "config.json", {"host": "should-be-ignored"})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.KWARG])
         result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
         assert result.host == "kwarg-host"
@@ -117,7 +109,7 @@ class TestSingleProvider:
 
     def test_single_provider_falls_back_to_model_defaults_when_no_data(self, tmp_path: Path):
         # File does not contain all fields - missing fields use model defaults
-        _write_json(tmp_path / "config.base.json", {"host": "only-host"})
+        _write_json(tmp_path / "config.json", {"host": "only-host"})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
         result = confiddle.load_config(AppConfig)
         assert result.host == "only-host"
@@ -150,7 +142,7 @@ class TestArgparse:
         assert result.port == 1234
 
     def test_argparse_overrides_json(self, tmp_path: Path):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
+        _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ARGPARSE])
         result = confiddle.load_config(
             AppConfig, provider_configs=[ArgparseProviderConfig(args=self._parse(["--host", "cli-host"]))]
@@ -172,7 +164,7 @@ class TestArgparse:
 
     def test_missing_argparse_data_silently_skipped(self, tmp_path: Path):
         # ARGPARSE in hierarchy but no providers supplied - should not error
-        _write_json(tmp_path / "config.base.json", {"host": "file-host"})
+        _write_json(tmp_path / "config.json", {"host": "file-host"})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ARGPARSE])
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
@@ -194,14 +186,14 @@ class TestDisabledProviders:
 
     def test_env_vars_ignored_when_env_not_in_hierarchy(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
-        _write_json(tmp_path / "config.base.json", {"host": "file-host"})
+        _write_json(tmp_path / "config.json", {"host": "file-host"})
         # ENV not in hierarchy - env var must not reach the model
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
 
     def test_json_file_ignored_when_base_not_in_hierarchy(self, tmp_path: Path, monkeypatch):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host"})
+        _write_json(tmp_path / "config.json", {"host": "file-host"})
         monkeypatch.setenv("APP:HOST", "env-host")
         # BASE not in hierarchy - the JSON file must not be read
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV_VAR])
@@ -217,7 +209,7 @@ class TestDisabledProviders:
 
     def test_missing_kwarg_data_does_not_error_when_kwarg_in_hierarchy(self, tmp_path: Path):
         # KWARG is in hierarchy but no providers supplied - should be silently skipped
-        _write_json(tmp_path / "config.base.json", {"host": "file-host"})
+        _write_json(tmp_path / "config.json", {"host": "file-host"})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
@@ -253,14 +245,14 @@ class TestMultiProviderOrdering:
     """Later providers in the hierarchy win when the same key is present in multiple sources."""
 
     def test_kwarg_overrides_json(self, tmp_path: Path):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
+        _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
         result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
         assert result.host == "kwarg-host"
         assert result.port == 9000  # from JSON - kwarg did not supply it
 
     def test_env_overrides_json(self, tmp_path: Path, monkeypatch):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
+        _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
         monkeypatch.setenv("APP:HOST", "env-host")
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig)
@@ -268,7 +260,7 @@ class TestMultiProviderOrdering:
         assert result.port == 9000  # from JSON - env did not supply it
 
     def test_kwarg_overrides_env_overrides_json(self, tmp_path: Path, monkeypatch):
-        _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000, "debug": False})
+        _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000, "debug": False})
         monkeypatch.setenv("APP:HOST", "env-host")
         monkeypatch.setenv("APP:PORT", "7777")
         confiddle = _confiddle(
@@ -280,7 +272,7 @@ class TestMultiProviderOrdering:
         assert result.debug is True  # kwarg wins
 
     def test_json_base_then_env_environment_file(self, tmp_path: Path, monkeypatch):
-        _write_json(tmp_path / "config.base.json", {"host": "base-host", "port": 8080})
+        _write_json(tmp_path / "config.json", {"host": "base-host", "port": 8080})
         _write_json(tmp_path / "config.dev.json", {"port": 9999})
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
@@ -305,7 +297,7 @@ class TestNestedConfig:
 
     def test_nested_config_from_json_only(self, tmp_path: Path):
         _write_json(
-            tmp_path / "config.base.json",
+            tmp_path / "config.json",
             {
                 "app": {"host": "app-host", "port": 443},
                 "database": {"host": "db-host", "port": 5433, "name": "prod"},
@@ -333,7 +325,7 @@ class TestNestedConfig:
 
     def test_nested_json_base_overridden_by_kwargs(self, tmp_path: Path):
         _write_json(
-            tmp_path / "config.base.json",
+            tmp_path / "config.json",
             {
                 "app": {"host": "base-host", "port": 8080},
                 "database": {"host": "base-db", "port": 5432, "name": "base_db"},
@@ -360,7 +352,7 @@ class TestNestedConfig:
         from the earlier provider that the later one omits are lost.
         """
         _write_json(
-            tmp_path / "config.base.json",
+            tmp_path / "config.json",
             {"database": {"host": "base-host", "port": 5432, "name": "important-db"}},
         )
         # kwarg only supplies `host` - `port` and `name` from the JSON are discarded
@@ -375,7 +367,7 @@ class TestNestedConfig:
 
     def test_three_providers_build_complete_nested_config(self, tmp_path: Path, monkeypatch):
         # JSON sets the database section
-        _write_json(tmp_path / "config.base.json", {"database": {"host": "db-host", "port": 5432, "name": "mydb"}})
+        _write_json(tmp_path / "config.json", {"database": {"host": "db-host", "port": 5432, "name": "mydb"}})
         # Env vars set the service section
         monkeypatch.setenv("APP:SERVICE:TIMEOUT", "120")
         monkeypatch.setenv("APP:SERVICE:RETRIES", "5")
