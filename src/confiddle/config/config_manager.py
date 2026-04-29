@@ -5,12 +5,12 @@ from pydantic import BaseModel
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.enums.merge_strategy import MergeStrategy
-from confiddle.config.factories.config_provider_factory import ConfigProviderFactory
+from confiddle.config.factories.provider_factory import ProviderFactory
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
-from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
-from confiddle.config.providers.base_config_provider import BaseConfigProvider
+from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
+from confiddle.config.providers.base_provider import BaseProvider
 from confiddle.utilities.dict_merger import DictMerger
 
 T = TypeVar("T", bound=BaseModel)
@@ -22,7 +22,7 @@ class ConfigManager:
 
     def __init__(self):
         self._confiddle_config: Optional[ConfiddleConfigModel] = None
-        self._factory = ConfigProviderFactory()
+        self._factory = ProviderFactory()
 
     ## Properties
 
@@ -40,7 +40,7 @@ class ConfigManager:
         self,
         model: type[T],
         *,
-        provider_configs: list[BaseProviderConfigModel] = [],
+        provider_configs: list[BaseProviderConfig] = [],
         base_data: Optional[dict] = None,
     ) -> T:
         if self._confiddle_config is None and model is not ConfiddleConfigModel:
@@ -61,16 +61,14 @@ class ConfigManager:
 
     ## Private
 
-    def _build_providers(
-        self, model: type[T], provider_configs: list[BaseProviderConfigModel]
-    ) -> list[BaseConfigProvider]:
+    def _build_providers(self, model: type[T], provider_configs: list[BaseProviderConfig]) -> list[BaseProvider]:
         confiddle_config = self._confiddle_config or ConfiddleConfigModel()
         is_bootstrap = model is ConfiddleConfigModel
         by_flavor = self._group_by_flavor(provider_configs)
         json_config = confiddle_config.bootstrap.json_file if is_bootstrap else confiddle_config.json_file
         env_config = confiddle_config.bootstrap.env_var if is_bootstrap else confiddle_config.env_var
 
-        result: list[BaseConfigProvider] = []
+        result: list[BaseProvider] = []
         for item in confiddle_config.hierarchy:
             if item is ConfigFlavor.JSON:
                 if json_config.directory_path is not None:
@@ -90,9 +88,9 @@ class ConfigManager:
         return result
 
     def _group_by_flavor(
-        self, provider_configs: list[BaseProviderConfigModel]
-    ) -> dict[ConfigFlavor, list[BaseProviderConfigModel]]:
-        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
+        self, provider_configs: list[BaseProviderConfig]
+    ) -> dict[ConfigFlavor, list[BaseProviderConfig]]:
+        by_flavor: dict[ConfigFlavor, list[BaseProviderConfig]] = {}
         for pc in provider_configs:
             if isinstance(pc, ArgparseProviderConfig):
                 by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(pc)

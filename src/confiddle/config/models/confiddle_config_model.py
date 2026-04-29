@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field, field_validator
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.bootstrap_config_model import BootstrapConfigModel
-from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
 
 _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV
@@ -25,19 +25,19 @@ class ConfiddleConfigModel(BaseModel):
     bootstrap: BootstrapConfigModel = Field(
         description="Configuration for the Confiddle bootstrapper, which sets up the configuration providers and their settings so that Confiddle can run.",
         default_factory=lambda: BootstrapConfigModel(
-            json_file=JsonConfigProviderConfigModel(filename_template="confiddle.json"),
-            env_var=EnvVarConfigProviderConfigModel(prefix="CONFIDDLE"),
+            json_file=JsonProviderConfig(filename_template="confiddle.json"),
+            env_var=EnvVarProviderConfig(prefix="CONFIDDLE"),
         ),
     )
 
-    env_var: EnvVarConfigProviderConfigModel = Field(
+    env_var: EnvVarProviderConfig = Field(
         description="Configuration for the environment variable provider for the application being configured.",
-        default_factory=EnvVarConfigProviderConfigModel,
+        default_factory=EnvVarProviderConfig,
     )
 
-    json_file: JsonConfigProviderConfigModel = Field(
+    json_file: JsonProviderConfig = Field(
         description="Configuration for the JSON file provider for the application being configured.",
-        default_factory=JsonConfigProviderConfigModel,
+        default_factory=JsonProviderConfig,
     )
 
     environment: ConfigEnvironment = Field(

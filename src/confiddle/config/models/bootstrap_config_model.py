@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
 
 class BootstrapConfigModel(BaseModel):
@@ -9,12 +9,12 @@ class BootstrapConfigModel(BaseModel):
     Model for configuring configuration providers.
     """
 
-    env_var: EnvVarConfigProviderConfigModel = Field(
+    env_var: EnvVarProviderConfig = Field(
         description="Configuration for the environment variable configuration provider.",
-        default_factory=EnvVarConfigProviderConfigModel,
+        default_factory=EnvVarProviderConfig,
     )
 
-    json_file: JsonConfigProviderConfigModel = Field(
+    json_file: JsonProviderConfig = Field(
         description="Configuration for the JSON file configuration provider.",
-        default_factory=JsonConfigProviderConfigModel,
+        default_factory=JsonProviderConfig,
     )

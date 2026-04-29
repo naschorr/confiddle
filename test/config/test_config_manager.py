@@ -9,9 +9,9 @@ from confiddle.config.config_manager import ConfigManager
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
-from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
 
 class SampleModel(BaseModel):
@@ -67,9 +67,7 @@ class TestJsonProvider:
 
     def test_raises_when_json_file_not_present(self, config_dir: Path):
         config_manager = ConfigManager()
-        config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir)
-        )
+        config_manager.confiddle_config = ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
         with pytest.raises(FileNotFoundError):
             config_manager.get_config(SampleModel)
 
@@ -80,7 +78,7 @@ class TestJsonProvider:
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            json_file=JsonProviderConfig(directory_path=config_dir),
             environment=ConfigEnvironment.PROD,
         )
         result = config_manager.get_config(SampleModel)
@@ -117,7 +115,7 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            json_file=JsonProviderConfig(directory_path=config_dir),
             hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT],
         )
         result = config_manager.get_config(
@@ -132,7 +130,7 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            json_file=JsonProviderConfig(directory_path=config_dir),
             environment=ConfigEnvironment.DEV,
             hierarchy=[ConfigFlavor.JSON, ConfigEnvironment.DEV],
         )
@@ -144,7 +142,7 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            json_file=JsonProviderConfig(directory_path=config_dir),
             hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ARGPARSE],
         )
         result = config_manager.get_config(
@@ -154,9 +152,7 @@ class TestHierarchyOrder:
 
     def test_dict_overwrites_argparse(self, bootstrapped_manager: ConfigManager):
         bootstrapped_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(
-                directory_path=bootstrapped_manager.confiddle_config.json_file.directory_path
-            ),
+            json_file=JsonProviderConfig(directory_path=bootstrapped_manager.confiddle_config.json_file.directory_path),
             hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.DICT],
         )
         result = bootstrapped_manager.get_config(
@@ -174,7 +170,7 @@ class TestHierarchyOrder:
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
-            json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+            json_file=JsonProviderConfig(directory_path=config_dir),
             hierarchy=[ConfigFlavor.DICT, ConfigFlavor.JSON],
         )
         result = config_manager.get_config(
@@ -205,7 +201,7 @@ class TestBuildProviderCoverage:
 
             config_manager = ConfigManager()
             config_manager.confiddle_config = ConfiddleConfigModel(
-                json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+                json_file=JsonProviderConfig(directory_path=config_dir),
                 environment=env,
                 hierarchy=[env],
             )

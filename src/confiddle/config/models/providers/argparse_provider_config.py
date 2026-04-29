@@ -4,10 +4,10 @@ import argparse
 
 from pydantic import ConfigDict, Field
 
-from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 
 
-class ArgparseProviderConfig(BaseProviderConfigModel):
+class ArgparseProviderConfig(BaseProviderConfig):
     """
     Supplies configuration values from argparse-parsed arguments.
 

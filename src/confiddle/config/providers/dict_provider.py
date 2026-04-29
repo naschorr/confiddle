@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TypeVar
 
 from confiddle.config.enums.merge_strategy import MergeStrategy
-from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.providers.base_config_provider import BaseConfigProvider
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.providers.base_provider import BaseProvider
 
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 T = TypeVar("T", bound=BaseModel)
 
 
-class DictConfigProvider(BaseConfigProvider):
+class DictProvider(BaseProvider):
     """
     Loads configuration data from a dictionary, optionally nested at a dot-separated scope path.
 

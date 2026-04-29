@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Optional, TypeVar
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
-from confiddle.config.models.providers.json_config_provider_config_model import (
+from confiddle.config.models.providers.json_provider_config import (
     ENVIRONMENT_PLACEHOLDER,
-    JsonConfigProviderConfigModel,
+    JsonProviderConfig,
 )
-from confiddle.config.providers.base_config_provider import BaseConfigProvider
+from confiddle.config.providers.base_provider import BaseProvider
 from confiddle.utilities.json_loader import JsonLoader
 
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ from pydantic import BaseModel
 T = TypeVar("T", bound=BaseModel)
 
 
-class JsonConfigProvider(BaseConfigProvider):
+class JsonProvider(BaseProvider):
     """
     Loads configuration data from a JSON file
     """
@@ -23,12 +23,12 @@ class JsonConfigProvider(BaseConfigProvider):
     def __init__(
         self,
         model: type[T],
-        config: JsonConfigProviderConfigModel,
+        config: JsonProviderConfig,
         *,
         environment: Optional[ConfigEnvironment] = None,
     ):
         if config.directory_path is None:
-            raise ValueError("JsonConfigProvider requires a directory_path in its config")
+            raise ValueError("JsonProvider requires a directory_path in its config")
 
         super().__init__(model)
 

@@ -2,13 +2,13 @@ from typing import Optional
 
 from pydantic import Field
 
-from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 
 _DEFAULT_ENV_VAR_DELIMITER = ":"
 _EXAMPLE_ENV_VAR_DELIMITERS = [":", "__"]
 
 
-class EnvVarConfigProviderConfigModel(BaseProviderConfigModel):
+class EnvVarProviderConfig(BaseProviderConfig):
     """
     Model for configuring the environment variable configuration provider.
     """

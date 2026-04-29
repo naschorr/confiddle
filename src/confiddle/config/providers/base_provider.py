@@ -9,7 +9,7 @@ from confiddle.helpers.model_validator import ModelValidator
 T = TypeVar("T", bound=BaseModel)
 
 
-class BaseConfigProvider(ABC):
+class BaseProvider(ABC):
 
     def __init__(self, model: type[T]):
         self._model = model
@@ -23,7 +23,7 @@ class BaseConfigProvider(ABC):
         """
         Subclasses implement this to return raw, unfiltered configuration data.
         """
-        raise NotImplementedError("Subclasses of BaseConfigProvider must implement the _get_raw_config method.")
+        raise NotImplementedError("Subclasses of BaseProvider must implement the _get_raw_config method.")
 
     def get_config(self) -> dict:
         """

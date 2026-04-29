@@ -2,20 +2,20 @@ from confiddle.main import Confiddle
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
-from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
+from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
 __all__ = [
     "Confiddle",
-    "ArgparseProviderConfig",
     "ConfigEnvironment",
     "ConfigFlavor",
-    "DictProviderConfig",
     "ConfiddleConfigModel",
-    "EnvVarConfigProviderConfigModel",
-    "JsonConfigProviderConfigModel",
-    "BaseProviderConfigModel",
+    "BaseProviderConfig",
+    "ArgparseProviderConfig",
+    "DictProviderConfig",
+    "EnvVarProviderConfig",
+    "JsonProviderConfig",
 ]

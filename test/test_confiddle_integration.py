@@ -15,8 +15,8 @@ from pydantic import BaseModel
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle import Confiddle, ArgparseProviderConfig, DictProviderConfig
 
 
@@ -60,14 +60,14 @@ def _confiddle(
     return Confiddle(
         confiddle_config=ConfiddleConfigModel(
             json_file=(
-                JsonConfigProviderConfigModel(
+                JsonProviderConfig(
                     directory_path=tmp_path,
                     filename_template="config.{environment}.json",
                 )
                 if tmp_path
-                else JsonConfigProviderConfigModel()
+                else JsonProviderConfig()
             ),
-            env_var=EnvVarConfigProviderConfigModel(prefix=env_prefix, delimiter=env_delimiter),
+            env_var=EnvVarProviderConfig(prefix=env_prefix, delimiter=env_delimiter),
             hierarchy=hierarchy,
         )
     )
@@ -223,7 +223,7 @@ class TestDisabledProviders:
         _write_json(tmp_path / "config.prod.json", {"host": "prod-host"})
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
-                json_file=JsonConfigProviderConfigModel(
+                json_file=JsonProviderConfig(
                     directory_path=tmp_path,
                     filename_template="config.{environment}.json",
                 ),
@@ -275,7 +275,7 @@ class TestMultiProviderOrdering:
         _write_json(tmp_path / "config.dev.json", {"port": 9999})
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
-                json_file=JsonConfigProviderConfigModel(
+                json_file=JsonProviderConfig(
                     directory_path=tmp_path,
                     filename_template="config.{environment}.json",
                 ),

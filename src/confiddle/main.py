@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from confiddle.config.config_manager import ConfigManager
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -35,5 +35,5 @@ class Confiddle:
 
     ## Methods
 
-    def load_config(self, config_model: type[T], *, provider_configs: list[BaseProviderConfigModel] = []) -> T:
+    def load_config(self, config_model: type[T], *, provider_configs: list[BaseProviderConfig] = []) -> T:
         return self._config_manager.get_config(config_model, provider_configs=provider_configs)

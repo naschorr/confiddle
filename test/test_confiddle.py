@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle import Confiddle, DictProviderConfig
 
 
@@ -21,7 +21,7 @@ class TestBootstrap:
         assert isinstance(confiddle._config_manager.confiddle_config, ConfiddleConfigModel)
 
     def test_bootstrap_from_confiddle_config(self, config_dir: Path):
-        confiddle_config = ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
+        confiddle_config = ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
         confiddle = Confiddle(confiddle_config=confiddle_config)
         assert confiddle._config_manager.confiddle_config.json_file.directory_path == config_dir
 
@@ -40,7 +40,7 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text("{}")
         (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
-            confiddle_config=ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
+            confiddle_config=ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
         )
         result = confiddle.load_config(SampleModel)
         assert isinstance(result, SampleModel)
@@ -49,7 +49,7 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text(json.dumps({"name": "from_file"}))
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
-                json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
+                json_file=JsonProviderConfig(directory_path=config_dir),
                 hierarchy=[ConfigFlavor.JSON],
             )
         )
@@ -60,7 +60,7 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text("{}")
         (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
-            confiddle_config=ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
+            confiddle_config=ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
         )
         result = confiddle.load_config(SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_dict"})])
         assert result.name == "from_dict"

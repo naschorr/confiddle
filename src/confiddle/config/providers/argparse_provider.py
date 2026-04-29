@@ -1,9 +1,9 @@
 import argparse
 from typing import TypeVar
 
-from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
-from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.providers.dict_config_provider import DictConfigProvider
+from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.providers.dict_provider import DictProvider
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 T = TypeVar("T", bound=BaseModel)
 
 
-class ArgparseConfigProvider(DictConfigProvider):
+class ArgparseProvider(DictProvider):
     """
     Loads configuration data from processed argparse args.
     """
