@@ -1,15 +1,16 @@
 from pathlib import Path
 from typing import Optional, Annotated
 
-from pydantic import BaseModel, Field, AfterValidator
+from pydantic import Field, AfterValidator
 
+from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
 from confiddle.helpers.field_validator import FieldValidator
 
 ENVIRONMENT_PLACEHOLDER = "{environment}"
 _DEFAULT_FILENAME_TEMPLATE = f"config.{ENVIRONMENT_PLACEHOLDER}.json"
 
 
-class JsonConfigProviderConfigModel(BaseModel):
+class JsonConfigProviderConfigModel(BaseProviderConfigModel):
     """
     Model for configuring the JSON configuration provider.
     """

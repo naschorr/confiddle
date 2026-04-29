@@ -3,6 +3,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
+from confiddle.config.enums.merge_strategy import MergeStrategy
 from confiddle.helpers.model_validator import ModelValidator
 
 T = TypeVar("T", bound=BaseModel)
@@ -12,6 +13,10 @@ class BaseConfigProvider(ABC):
 
     def __init__(self, model: type[T]):
         self._model = model
+
+    @property
+    def merge_strategy(self) -> MergeStrategy:
+        return MergeStrategy.SHALLOW
 
     @abstractmethod
     def _get_raw_config(self) -> dict:

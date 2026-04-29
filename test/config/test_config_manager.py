@@ -9,7 +9,10 @@ from confiddle.config.config_manager import ConfigManager
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
+from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
+from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 
 
 class SampleModel(BaseModel):
@@ -42,7 +45,7 @@ class TestBaseData:
         result = bootstrapped_manager.get_config(
             SampleModel,
             base_data={"name": "seeded"},
-            provider_data={ConfigFlavor.KWARG: {"name": "overwritten"}},
+            provider_configs=[KwargProviderConfig(name="overwritten")],
         )
         assert result.name == "overwritten"
 
@@ -88,21 +91,21 @@ class TestProviderData:
     def test_kwarg_provider_data_applied(self, bootstrapped_manager: ConfigManager):
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}},
+            provider_configs=[KwargProviderConfig(name="from_kwarg")],
         )
         assert result.name == "from_kwarg"
 
     def test_argparse_provider_data_applied(self, bootstrapped_manager: ConfigManager):
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_data={ConfigFlavor.ARGPARSE: {"value": 99}},
+            provider_configs=[ArgparseProviderConfig(args={"value": 99})],
         )
         assert result.value == 99
 
     def test_kwarg_overrides_json(self, bootstrapped_manager: ConfigManager, config_file: Path):
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_data={ConfigFlavor.KWARG: {"name": "kwarg_wins"}},
+            provider_configs=[KwargProviderConfig(name="kwarg_wins")],
         )
         assert result.name == "kwarg_wins"
 
@@ -117,7 +120,7 @@ class TestHierarchyOrder:
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
             hierarchy=[ConfigFlavor.BASE, ConfigFlavor.KWARG],
         )
-        result = config_manager.get_config(SampleModel, provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}})
+        result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
         assert result.name == "from_kwarg"
 
     def test_env_json_overwrites_base_json(self, config_dir: Path):
@@ -143,7 +146,7 @@ class TestHierarchyOrder:
             hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE],
         )
         result = config_manager.get_config(
-            SampleModel, provider_data={ConfigFlavor.ARGPARSE: {"name": "from_argparse"}}
+            SampleModel, provider_configs=[ArgparseProviderConfig(args={"name": "from_argparse"})]
         )
         assert result.name == "from_argparse"
 
@@ -156,10 +159,10 @@ class TestHierarchyOrder:
         )
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_data={
-                ConfigFlavor.ARGPARSE: {"name": "from_argparse"},
-                ConfigFlavor.KWARG: {"name": "from_kwarg"},
-            },
+            provider_configs=[
+                ArgparseProviderConfig(args={"name": "from_argparse"}),
+                KwargProviderConfig(name="from_kwarg"),
+            ],
         )
         assert result.name == "from_kwarg"
 
@@ -172,7 +175,7 @@ class TestHierarchyOrder:
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
             hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.BASE],
         )
-        result = config_manager.get_config(SampleModel, provider_data={ConfigFlavor.KWARG: {"name": "from_kwarg"}})
+        result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
         assert result.name == "from_base"
 
 
@@ -185,8 +188,12 @@ class TestBuildProviderCoverage:
                 hierarchy=[flavor],
             )
             # Provide data for dict-based flavors so they aren't skipped as None
-            provider_data = {ConfigFlavor.KWARG: {"name": "x"}, ConfigFlavor.ARGPARSE: {"name": "x"}}
-            config_manager.get_config(SampleModel, provider_data=provider_data)  # should not raise
+            providers = [
+                KwargProviderConfig(name="x"),
+                ArgparseProviderConfig(args={"name": "x"}),
+                DictProviderConfig(data={"name": "x"}),
+            ]
+            config_manager.get_config(SampleModel, provider_configs=providers)  # should not raise
 
     def test_all_config_environments_handled(self, config_dir: Path):
         # Every ConfigEnvironment member should be accepted in the hierarchy without raising
@@ -201,3 +208,77 @@ class TestBuildProviderCoverage:
             )
             result = config_manager.get_config(SampleModel)
             assert result.name == env.value
+
+
+class TestOverlays:
+    def test_overlay_applied_after_hierarchy(self, bootstrapped_manager: ConfigManager):
+        result = bootstrapped_manager.get_config(
+            SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_overlay"})]
+        )
+        assert result.name == "from_overlay"
+
+    def test_overlay_overrides_provider_data(self, bootstrapped_manager: ConfigManager):
+        result = bootstrapped_manager.get_config(
+            SampleModel,
+            provider_configs=[
+                KwargProviderConfig(name="kwarg_loses"),
+                DictProviderConfig(data={"name": "overlay_wins"}),
+            ],
+        )
+        assert result.name == "overlay_wins"
+
+    def test_multiple_overlays_applied_in_order(self, bootstrapped_manager: ConfigManager):
+        result = bootstrapped_manager.get_config(
+            SampleModel,
+            provider_configs=[DictProviderConfig(data={"name": "first"}), DictProviderConfig(data={"name": "second"})],
+        )
+        assert result.name == "second"
+
+    def test_no_overlays_behaves_normally(self, bootstrapped_manager: ConfigManager):
+        result = bootstrapped_manager.get_config(SampleModel, provider_configs=[])
+        assert result.name == "default"
+
+
+class TestDeepMerge:
+    def test_scoped_overlay_deep_merges_nested_dict(self, bootstrapped_manager: ConfigManager):
+        class NestedModel(BaseModel):
+            items: dict = {}
+
+        bootstrapped_manager.confiddle_config = ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT])
+
+        result = bootstrapped_manager.get_config(
+            NestedModel,
+            provider_configs=[
+                DictProviderConfig(data={"a": 1, "b": 2}, scope="items"),
+                DictProviderConfig(data={"b": 99, "c": 3}, scope="items"),
+            ],
+        )
+        assert result.items == {"a": 1, "b": 99, "c": 3}
+
+    def test_flat_overlay_shallow_replaces_nested_dict(self, bootstrapped_manager: ConfigManager):
+        class NestedModel(BaseModel):
+            items: dict = {}
+
+        bootstrapped_manager.confiddle_config = ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT])
+
+        result = bootstrapped_manager.get_config(
+            NestedModel,
+            provider_configs=[
+                DictProviderConfig(data={"items": {"a": 1, "b": 2}}),
+                DictProviderConfig(data={"items": {"b": 99, "c": 3}}),
+            ],
+        )
+        assert result.items == {"b": 99, "c": 3}
+
+    def test_scoped_overlay_does_not_affect_scalar_fields(self, bootstrapped_manager: ConfigManager):
+        bootstrapped_manager.confiddle_config = ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT])
+
+        result = bootstrapped_manager.get_config(
+            SampleModel,
+            provider_configs=[
+                DictProviderConfig(data={"name": "base", "value": 1}),
+                DictProviderConfig(data={"name": "overlay"}),
+            ],
+        )
+        assert result.name == "overlay"
+        assert result.value == 1

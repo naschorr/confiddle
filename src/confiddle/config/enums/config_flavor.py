@@ -10,3 +10,4 @@ class ConfigFlavor(str, Enum):
     ENV = "env"
     ARGPARSE = "argparse"
     KWARG = "kwarg"
+    DICT = "dict"

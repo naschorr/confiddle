@@ -3,8 +3,8 @@ from typing import Optional, TypeVar
 from pydantic import BaseModel
 
 from confiddle.config.config_manager import ConfigManager
-from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
+from confiddle.config.models.providers.provider_config_model import BaseProviderConfigModel
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -35,5 +35,5 @@ class Confiddle:
 
     ## Methods
 
-    def load_config(self, config_model: type[T], *, provider_data: dict[ConfigFlavor, dict] = {}) -> T:
-        return self._config_manager.get_config(config_model, provider_data=provider_data)
+    def load_config(self, config_model: type[T], *, provider_configs: list[BaseProviderConfigModel] = []) -> T:
+        return self._config_manager.get_config(config_model, provider_configs=provider_configs)

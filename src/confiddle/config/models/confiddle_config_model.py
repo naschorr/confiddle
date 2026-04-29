@@ -14,6 +14,7 @@ _DEFAULT_HIERARCHY = [
     ConfigFlavor.ENV,
     ConfigFlavor.ARGPARSE,
     ConfigFlavor.KWARG,
+    ConfigFlavor.DICT,
 ]
 
 
