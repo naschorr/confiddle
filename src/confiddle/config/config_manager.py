@@ -126,12 +126,7 @@ class ConfigManager:
         if json_config.directory_path is None:
             return []
 
-        provider = JsonConfigProvider(
-            model,
-            directory_path=json_config.directory_path,
-            filename_template=json_config.filename_template,
-            environment=config_key,
-        )
+        provider = JsonConfigProvider(model, json_config, environment=config_key)
 
         if not provider.file_path.exists():
             return []
@@ -145,21 +140,21 @@ class ConfigManager:
     ) -> EnvVarConfigProvider:
         env_config = confiddle_config.bootstrap.env_var if model is ConfiddleConfigModel else confiddle_config.env_var
 
-        return EnvVarConfigProvider(model, prefix=env_config.prefix, delimiter=env_config.delimiter)
+        return EnvVarConfigProvider(model, env_config)
 
     def _build_argparse_providers(
         self,
         model: type[T],
         configs: list[ArgparseProviderConfig],
     ) -> list[BaseConfigProvider]:
-        return [ArgparseConfigProvider(model, apc.args) for apc in configs]
+        return [ArgparseConfigProvider(model, apc) for apc in configs]
 
     def _build_kwarg_providers(
         self,
         model: type[T],
         configs: list[KwargProviderConfig],
     ) -> list[BaseConfigProvider]:
-        return [KwargConfigProvider(model, **kpc.data) for kpc in configs]
+        return [KwargConfigProvider(model, kpc) for kpc in configs]
 
     def _build_dict_providers(
         self,
@@ -168,5 +163,5 @@ class ConfigManager:
     ) -> list[BaseConfigProvider]:
         if not configs:
             return []
-        return [DictConfigProvider(model, cfg.data, scope=cfg.scope) for cfg in configs]
+        return [DictConfigProvider(model, cfg) for cfg in configs]
 

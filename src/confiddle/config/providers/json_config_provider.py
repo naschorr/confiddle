@@ -3,7 +3,10 @@ from typing import TypeVar
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
-from confiddle.config.models.providers.json_config_provider_config_model import ENVIRONMENT_PLACEHOLDER
+from confiddle.config.models.providers.json_config_provider_config_model import (
+    ENVIRONMENT_PLACEHOLDER,
+    JsonConfigProviderConfigModel,
+)
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.utilities.json_loader import JsonLoader
 
@@ -21,19 +24,23 @@ class JsonConfigProvider(BaseConfigProvider):
     def __init__(
         self,
         model: type[T],
+        config: JsonConfigProviderConfigModel,
         *,
-        directory_path: Path,
-        filename_template: str,
         environment: ConfigFlavor | ConfigEnvironment,
     ):
+        if config.directory_path is None:
+            raise ValueError("JsonConfigProvider requires a directory_path in its config")
+
         super().__init__(model)
 
-        primary = directory_path / filename_template.format(environment=environment.value)
+        primary = config.directory_path / config.filename_template.format(environment=environment.value)
 
-        ## For ConfigFlavor.BASE with a template that contains {environment}, also resolve a plain fallback (e.g.
+        ## For ConfigFlavor.JSON with a template that contains {environment}, also resolve a plain fallback (e.g.
         ## "config.json") so a bare config file works without renaming.
-        if environment is ConfigFlavor.JSON and ENVIRONMENT_PLACEHOLDER in filename_template:
-            fallback = directory_path / filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace("..", ".")
+        if environment is ConfigFlavor.JSON and ENVIRONMENT_PLACEHOLDER in config.filename_template:
+            fallback = config.directory_path / config.filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace(
+                "..", "."
+            )
             self._file_path = primary
             self._fallback_path: Path | None = fallback
         else:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TypeVar
 
 from confiddle.config.enums.merge_strategy import MergeStrategy
+from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 
 from pydantic import BaseModel
@@ -20,17 +21,17 @@ class DictConfigProvider(BaseConfigProvider):
     preserved. Without a scope the merge is shallow.
     """
 
-    def __init__(self, model: type[T], config_dict: dict, *, scope: str | None = None):
+    def __init__(self, model: type[T], config: DictProviderConfig):
         super().__init__(model)
-        if scope:
-            wrapped = config_dict
-            for key in reversed(scope.split(".")):
+        if config.scope:
+            wrapped = config.data
+            for key in reversed(config.scope.split(".")):
                 wrapped = {key: wrapped}
 
             self._config_dict = wrapped
             self._merge_strategy = MergeStrategy.DEEP
         else:
-            self._config_dict = config_dict
+            self._config_dict = config.data
             self._merge_strategy = MergeStrategy.SHALLOW
 
     @property

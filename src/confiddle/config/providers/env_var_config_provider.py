@@ -1,6 +1,7 @@
 import os
-from typing import Optional, TypeVar
+from typing import TypeVar
 
+from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.helpers.field_annotation_helper import get_field_annotation, is_container_annotation, unwrap_annotation
 
@@ -15,11 +16,11 @@ class EnvVarConfigProvider(BaseConfigProvider):
     Loads configuration data from environment variables into a dictionary structure that matches the provided model.
     """
 
-    def __init__(self, model: type[T], *, prefix: Optional[str], delimiter: str):
+    def __init__(self, model: type[T], config: EnvVarConfigProviderConfigModel):
         super().__init__(model)
 
-        self._prefix = prefix
-        self._delimiter = delimiter
+        self._prefix = config.prefix
+        self._delimiter = config.delimiter
 
     def _get_raw_config(self) -> dict:
         ## Filter environment variables by prefix if a prefix is specified
