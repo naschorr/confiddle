@@ -118,7 +118,7 @@ class TestHierarchyOrder:
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-            hierarchy=[ConfigFlavor.BASE, ConfigFlavor.KWARG],
+            hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG],
         )
         result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
         assert result.name == "from_kwarg"
@@ -132,7 +132,7 @@ class TestHierarchyOrder:
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
             environment=ConfigEnvironment.DEV,
-            hierarchy=[ConfigFlavor.BASE, ConfigEnvironment.DEV],
+            hierarchy=[ConfigFlavor.JSON, ConfigEnvironment.DEV],
         )
         result = config_manager.get_config(SampleModel)
         assert result.name == "from_dev"
@@ -143,7 +143,7 @@ class TestHierarchyOrder:
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-            hierarchy=[ConfigFlavor.BASE, ConfigFlavor.ARGPARSE],
+            hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ARGPARSE],
         )
         result = config_manager.get_config(
             SampleModel, provider_configs=[ArgparseProviderConfig(args={"name": "from_argparse"})]
@@ -173,7 +173,7 @@ class TestHierarchyOrder:
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-            hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.BASE],
+            hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.JSON],
         )
         result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
         assert result.name == "from_base"

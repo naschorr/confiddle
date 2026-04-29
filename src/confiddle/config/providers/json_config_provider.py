@@ -32,7 +32,7 @@ class JsonConfigProvider(BaseConfigProvider):
 
         ## For ConfigFlavor.BASE with a template that contains {environment}, also resolve a plain fallback (e.g.
         ## "config.json") so a bare config file works without renaming.
-        if environment is ConfigFlavor.BASE and ENVIRONMENT_PLACEHOLDER in filename_template:
+        if environment is ConfigFlavor.JSON and ENVIRONMENT_PLACEHOLDER in filename_template:
             fallback = directory_path / filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace("..", ".")
             self._file_path = primary
             self._fallback_path: Path | None = fallback

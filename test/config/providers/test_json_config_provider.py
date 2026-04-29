@@ -53,7 +53,7 @@ def _provider(
     data: dict,
     *,
     filename: str = "config.json",
-    environment: ConfigFlavor | ConfigEnvironment = ConfigFlavor.BASE
+    environment: ConfigFlavor | ConfigEnvironment = ConfigFlavor.JSON,
 ) -> JsonConfigProvider:
     f = tmp_path / filename
     f.write_text(json.dumps(data))
@@ -65,7 +65,7 @@ def _make(
     data: dict,
     *,
     filename_template: str = "config.json",
-    environment: ConfigFlavor | ConfigEnvironment = ConfigFlavor.BASE
+    environment: ConfigFlavor | ConfigEnvironment = ConfigFlavor.JSON,
 ) -> JsonConfigProvider:
     name = filename_template.format(environment=environment.value)
     (tmp_path / name).write_text(json.dumps(data))
@@ -80,7 +80,7 @@ def _make(
 class TestFlatFields:
     def test_loads_single_field(self, tmp_path):
         p = JsonConfigProvider(
-            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         (tmp_path / "config.json").write_text(json.dumps({"name": "hello"}))
         assert p.get_config()["name"] == "hello"
@@ -88,7 +88,7 @@ class TestFlatFields:
     def test_loads_multiple_fields(self, tmp_path):
         (tmp_path / "config.json").write_text(json.dumps({"name": "hi", "value": 42}))
         p = JsonConfigProvider(
-            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         assert result == {"name": "hi", "value": 42}
@@ -96,13 +96,13 @@ class TestFlatFields:
     def test_empty_file_returns_empty_dict(self, tmp_path):
         (tmp_path / "config.json").write_text(json.dumps({}))
         p = JsonConfigProvider(
-            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            FlatModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         assert p.get_config() == {}
 
     def test_raises_if_file_missing(self, tmp_path):
         p = JsonConfigProvider(
-            FlatModel, directory_path=tmp_path, filename_template="missing.json", environment=ConfigFlavor.BASE
+            FlatModel, directory_path=tmp_path, filename_template="missing.json", environment=ConfigFlavor.JSON
         )
         with pytest.raises(FileNotFoundError, match="does not exist"):
             p.get_config()
@@ -116,7 +116,7 @@ class TestNestedIngest:
         data = {"database": {"host": "db.example.com", "port": 5433}}
         (tmp_path / "config.json").write_text(json.dumps(data))
         p = JsonConfigProvider(
-            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -127,7 +127,7 @@ class TestNestedIngest:
         data = {"database": {"host": "other-host"}}
         (tmp_path / "config.json").write_text(json.dumps(data))
         p = JsonConfigProvider(
-            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -141,7 +141,7 @@ class TestNestedIngest:
         }
         (tmp_path / "config.json").write_text(json.dumps(data))
         p = JsonConfigProvider(
-            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            NestedModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -153,7 +153,7 @@ class TestNestedIngest:
         data = {"level2": {"level3": {"value": "found"}}}
         (tmp_path / "config.json").write_text(json.dumps(data))
         p = JsonConfigProvider(
-            DeepModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            DeepModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         model = DeepModel(**result)
@@ -186,7 +186,7 @@ class TestFilenameTemplates:
 
     def test_no_placeholder_uses_same_file_for_all_envs(self, tmp_path):
         (tmp_path / "config.json").write_text(json.dumps({"name": "shared"}))
-        for env in (ConfigEnvironment.DEV, ConfigEnvironment.PROD, ConfigFlavor.BASE):
+        for env in (ConfigEnvironment.DEV, ConfigEnvironment.PROD, ConfigFlavor.JSON):
             p = JsonConfigProvider(FlatModel, directory_path=tmp_path, filename_template="config.json", environment=env)
             assert p.get_config()["name"] == "shared"
 
@@ -196,7 +196,7 @@ class TestFilenameTemplates:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.file_path == tmp_path / "config.base.json"
 
@@ -220,7 +220,7 @@ class TestValidation:
         # "count" must be int; passing a non-numeric string should fail model validation
         (tmp_path / "config.json").write_text(json.dumps({"count": "not-a-number", "label": "x"}))
         p = JsonConfigProvider(
-            StrictModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            StrictModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         with pytest.raises(ValidationError):
             p.get_config()
@@ -229,7 +229,7 @@ class TestValidation:
         # Pydantic v2 coerces "42" -> 42 for int fields
         (tmp_path / "config.json").write_text(json.dumps({"count": 99, "label": "y"}))
         p = JsonConfigProvider(
-            StrictModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.BASE
+            StrictModel, directory_path=tmp_path, filename_template="config.json", environment=ConfigFlavor.JSON
         )
         result = p.get_config()
         model = StrictModel(**result)
@@ -246,7 +246,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.get_config()["name"] == "from_base"
 
@@ -256,7 +256,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.get_config()["name"] == "from_fallback"
 
@@ -267,7 +267,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.get_config()["name"] == "primary"
 
@@ -277,7 +277,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.file_path == tmp_path / "config.base.json"
 
@@ -287,7 +287,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.file_path == tmp_path / "config.json"
 
@@ -296,7 +296,7 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.{environment}.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         with pytest.raises(FileNotFoundError):
             p.get_config()
@@ -320,6 +320,6 @@ class TestBaseFallback:
             FlatModel,
             directory_path=tmp_path,
             filename_template="config.json",
-            environment=ConfigFlavor.BASE,
+            environment=ConfigFlavor.JSON,
         )
         assert p.get_config()["name"] == "static"

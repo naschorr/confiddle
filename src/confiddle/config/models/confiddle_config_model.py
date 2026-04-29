@@ -9,7 +9,7 @@ from confiddle.config.models.providers.json_config_provider_config_model import 
 
 _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV
 _DEFAULT_HIERARCHY = [
-    ConfigFlavor.BASE,
+    ConfigFlavor.JSON,
     _DEFAULT_CONFIG_ENVIRONMENT,
     ConfigFlavor.ENV,
     ConfigFlavor.ARGPARSE,

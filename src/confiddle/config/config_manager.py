@@ -94,11 +94,11 @@ class ConfigManager:
         confiddle_config: ConfiddleConfigModel,
         by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]],
     ) -> list[BaseConfigProvider]:
-        if item is ConfigFlavor.BASE:
+        if item is ConfigFlavor.JSON:
             json_config = (
                 confiddle_config.bootstrap.json_file if model is ConfiddleConfigModel else confiddle_config.json_file
             )
-            return self._build_json_provider(model, ConfigFlavor.BASE, json_config)
+            return self._build_json_provider(model, ConfigFlavor.JSON, json_config)
         elif isinstance(item, ConfigEnvironment):
             if item is not confiddle_config.environment:
                 return []
@@ -169,3 +169,4 @@ class ConfigManager:
         if not configs:
             return []
         return [DictConfigProvider(model, cfg.data, scope=cfg.scope) for cfg in configs]
+

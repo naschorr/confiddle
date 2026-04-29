@@ -48,7 +48,7 @@ class TestLoadConfig:
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
                 json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-                hierarchy=[ConfigFlavor.BASE],
+                hierarchy=[ConfigFlavor.JSON],
             )
         )
         result = confiddle.load_config(SampleModel)
