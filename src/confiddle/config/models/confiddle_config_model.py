@@ -11,7 +11,7 @@ _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV
 _DEFAULT_HIERARCHY = [
     ConfigFlavor.JSON,
     _DEFAULT_CONFIG_ENVIRONMENT,
-    ConfigFlavor.ENV,
+    ConfigFlavor.ENV_VAR,
     ConfigFlavor.ARGPARSE,
     ConfigFlavor.KWARG,
     ConfigFlavor.DICT,

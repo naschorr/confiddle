@@ -97,7 +97,7 @@ class TestSingleProvider:
     def test_env_only_loads_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
         monkeypatch.setenv("APP:PORT", "7000")
-        confiddle = _confiddle(hierarchy=[ConfigFlavor.ENV])
+        confiddle = _confiddle(hierarchy=[ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig)
         assert result.host == "env-host"
         assert result.port == 7000
@@ -204,14 +204,14 @@ class TestDisabledProviders:
         _write_json(tmp_path / "config.base.json", {"host": "file-host"})
         monkeypatch.setenv("APP:HOST", "env-host")
         # BASE not in hierarchy - the JSON file must not be read
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV])
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig)
         assert result.host == "env-host"
 
     def test_kwarg_data_ignored_when_kwarg_not_in_hierarchy(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
         # KWARG not in hierarchy - kwarg data passed to load_config must be ignored
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV])
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
         assert result.host == "env-host"
 
@@ -225,7 +225,7 @@ class TestDisabledProviders:
     def test_missing_json_file_silently_skipped(self, tmp_path: Path, monkeypatch):
         # directory_path set but no file written - JSON provider silently skipped
         monkeypatch.setenv("APP:HOST", "env-host")
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV])
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig)
         assert result.host == "env-host"
 
@@ -262,7 +262,7 @@ class TestMultiProviderOrdering:
     def test_env_overrides_json(self, tmp_path: Path, monkeypatch):
         _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000})
         monkeypatch.setenv("APP:HOST", "env-host")
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV])
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(AppConfig)
         assert result.host == "env-host"
         assert result.port == 9000  # from JSON - env did not supply it
@@ -271,7 +271,9 @@ class TestMultiProviderOrdering:
         _write_json(tmp_path / "config.base.json", {"host": "file-host", "port": 9000, "debug": False})
         monkeypatch.setenv("APP:HOST", "env-host")
         monkeypatch.setenv("APP:PORT", "7777")
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV, ConfigFlavor.KWARG])
+        confiddle = _confiddle(
+            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.KWARG]
+        )
         result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host", debug=True)])
         assert result.host == "kwarg-host"  # kwarg wins
         assert result.port == 7777  # env wins over json
@@ -322,7 +324,7 @@ class TestNestedConfig:
         monkeypatch.setenv("APP:APP:PORT", "5000")
         monkeypatch.setenv("APP:DATABASE:HOST", "env-db-host")
         monkeypatch.setenv("APP:SERVICE:TIMEOUT", "90")
-        confiddle = _confiddle(hierarchy=[ConfigFlavor.ENV])
+        confiddle = _confiddle(hierarchy=[ConfigFlavor.ENV_VAR])
         result = confiddle.load_config(FullConfig)
         assert result.app.host == "env-app-host"
         assert result.app.port == 5000
@@ -378,7 +380,9 @@ class TestNestedConfig:
         monkeypatch.setenv("APP:SERVICE:TIMEOUT", "120")
         monkeypatch.setenv("APP:SERVICE:RETRIES", "5")
         # Kwargs set the app section
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV, ConfigFlavor.KWARG])
+        confiddle = _confiddle(
+            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.KWARG]
+        )
         result = confiddle.load_config(
             FullConfig,
             provider_configs=[KwargProviderConfig(app={"host": "kwarg-host", "port": 443, "debug": True})],

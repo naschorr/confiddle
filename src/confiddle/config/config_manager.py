@@ -106,7 +106,7 @@ class ConfigManager:
                 confiddle_config.bootstrap.json_file if model is ConfiddleConfigModel else confiddle_config.json_file
             )
             return self._build_json_provider(model, item, json_config)
-        elif item is ConfigFlavor.ENV:
+        elif item is ConfigFlavor.ENV_VAR:
             return [self._build_env_provider(model, confiddle_config)]
         elif item is ConfigFlavor.ARGPARSE:
             return self._build_argparse_providers(model, by_flavor.get(ConfigFlavor.ARGPARSE, []))
@@ -164,4 +164,3 @@ class ConfigManager:
         if not configs:
             return []
         return [DictConfigProvider(model, cfg) for cfg in configs]
-
