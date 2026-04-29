@@ -33,6 +33,8 @@ def config_file(config_dir: Path) -> Path:
 
 @pytest.fixture
 def bootstrapped_manager(config_dir: Path) -> ConfigManager:
+    (config_dir / "config.json").write_text("{}")
+    (config_dir / "config.dev.json").write_text("{}")
     config_manager = ConfigManager()
     config_manager.confiddle_config = ConfiddleConfigModel(
         json_file=JsonConfigProviderConfigModel(directory_path=config_dir)

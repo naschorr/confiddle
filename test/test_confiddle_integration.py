@@ -214,12 +214,11 @@ class TestDisabledProviders:
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
 
-    def test_missing_json_file_silently_skipped(self, tmp_path: Path, monkeypatch):
-        # directory_path set but no file written - JSON provider silently skipped
-        monkeypatch.setenv("APP:HOST", "env-host")
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR])
-        result = confiddle.load_config(AppConfig)
-        assert result.host == "env-host"
+    def test_raises_when_json_file_missing(self, tmp_path: Path):
+        # directory_path set but no file written - FileNotFoundError raised
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
+        with pytest.raises(FileNotFoundError):
+            confiddle.load_config(AppConfig)
 
     def test_env_specific_file_ignored_when_environment_differs(self, tmp_path: Path):
         # File for PROD exists but environment is DEV -> skip

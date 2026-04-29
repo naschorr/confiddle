@@ -39,14 +39,11 @@ class JsonConfigProvider(BaseConfigProvider):
         else:
             filename = config.filename_template.format(environment=environment.value)
 
-        self._file_path = config.directory_path / filename
+        file_path = config.directory_path / filename
+        if not file_path.exists():
+            raise FileNotFoundError(f"JSON config file '{file_path}' does not exist")
 
-    @property
-    def file_path(self) -> Path:
-        return self._file_path
+        self.file_path = file_path
 
     def _get_raw_config(self) -> dict:
-        if not self.file_path.exists():
-            raise FileNotFoundError(f"Config file path '{self.file_path}' does not exist")
-
         return JsonLoader.load_json(self.file_path)

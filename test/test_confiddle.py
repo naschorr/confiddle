@@ -37,6 +37,8 @@ class TestBootstrap:
 
 class TestLoadConfig:
     def test_returns_instance_of_model(self, config_dir: Path):
+        (config_dir / "config.json").write_text("{}")
+        (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
         )
@@ -55,6 +57,8 @@ class TestLoadConfig:
         assert result.name == "from_file"
 
     def test_provider_data_applied(self, config_dir: Path):
+        (config_dir / "config.json").write_text("{}")
+        (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
         )

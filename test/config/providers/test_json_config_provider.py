@@ -53,12 +53,12 @@ class StrictModel(BaseModel):
 
 class TestFlatFields:
     def test_loads_single_field(self, tmp_path):
+        (tmp_path / "config.json").write_text(json.dumps({"name": "hello"}))
         p = JsonConfigProvider(
             FlatModel,
             JsonConfigProviderConfigModel(directory_path=tmp_path, filename_template="config.json"),
             environment=None,
         )
-        (tmp_path / "config.json").write_text(json.dumps({"name": "hello"}))
         assert p.get_config()["name"] == "hello"
 
     def test_loads_multiple_fields(self, tmp_path):
@@ -81,13 +81,12 @@ class TestFlatFields:
         assert p.get_config() == {}
 
     def test_raises_if_file_missing(self, tmp_path):
-        p = JsonConfigProvider(
-            FlatModel,
-            JsonConfigProviderConfigModel(directory_path=tmp_path, filename_template="missing.json"),
-            environment=None,
-        )
         with pytest.raises(FileNotFoundError, match="does not exist"):
-            p.get_config()
+            JsonConfigProvider(
+                FlatModel,
+                JsonConfigProviderConfigModel(directory_path=tmp_path, filename_template="missing.json"),
+                environment=None,
+            )
 
 
 ## ── Nested model ingest ───────────────────────────────────────────────────────

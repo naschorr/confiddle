@@ -67,31 +67,18 @@ class ConfigManager:
     ) -> list[BaseConfigProvider]:
         confiddle_config = self._confiddle_config or ConfiddleConfigModel()
         is_bootstrap = model is ConfiddleConfigModel
-
-        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
-        for provider_config in provider_configs:
-            if isinstance(provider_config, ArgparseProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(provider_config)
-            elif isinstance(provider_config, KwargProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.KWARG, []).append(provider_config)
-            elif isinstance(provider_config, DictProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.DICT, []).append(provider_config)
-
-        result: list[BaseConfigProvider] = []
+        by_flavor = self._group_by_flavor(provider_configs)
         json_config = confiddle_config.bootstrap.json_file if is_bootstrap else confiddle_config.json_file
         env_config = confiddle_config.bootstrap.env_var if is_bootstrap else confiddle_config.env_var
 
+        result: list[BaseConfigProvider] = []
         for item in confiddle_config.hierarchy:
             if item is ConfigFlavor.JSON:
                 if json_config.directory_path is not None:
-                    provider = self._factory.build_provider(model, json_config, environment=None)
-                    if provider.file_path.exists():
-                        result.append(provider)
+                    result.append(self._factory.build_provider(model, json_config, environment=None))
             elif isinstance(item, ConfigEnvironment):
                 if item is confiddle_config.environment and json_config.directory_path is not None:
-                    provider = self._factory.build_provider(model, json_config, environment=item)
-                    if provider.file_path.exists():
-                        result.append(provider)
+                    result.append(self._factory.build_provider(model, json_config, environment=item))
             elif item is ConfigFlavor.ENV_VAR:
                 result.append(self._factory.build_provider(model, env_config))
             elif item is ConfigFlavor.ARGPARSE:
@@ -104,3 +91,17 @@ class ConfigManager:
                 result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.DICT, []))
 
         return result
+
+    def _group_by_flavor(
+        self, provider_configs: list[BaseProviderConfigModel]
+    ) -> dict[ConfigFlavor, list[BaseProviderConfigModel]]:
+        by_flavor: dict[ConfigFlavor, list[BaseProviderConfigModel]] = {}
+        for pc in provider_configs:
+            if isinstance(pc, ArgparseProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(pc)
+            elif isinstance(pc, KwargProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.KWARG, []).append(pc)
+            elif isinstance(pc, DictProviderConfig):
+                by_flavor.setdefault(ConfigFlavor.DICT, []).append(pc)
+
+        return by_flavor

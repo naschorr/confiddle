@@ -66,17 +66,18 @@ class TestJsonProvider:
         result = config_manager.get_config(SampleModel)
         assert result.name == "default"
 
-    def test_skips_json_when_file_not_present(self, bootstrapped_manager: ConfigManager):
-        # config_dir has no JSON files placed - no config_file fixture used
-        result = bootstrapped_manager.get_config(SampleModel)
-        assert result.name == "default"
+    def test_raises_when_json_file_not_present(self, config_dir: Path):
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            json_file=JsonConfigProviderConfigModel(directory_path=config_dir)
+        )
+        with pytest.raises(FileNotFoundError):
+            config_manager.get_config(SampleModel)
 
     def test_skips_json_when_environment_mismatch(self, config_dir: Path):
         # hierarchy default includes DEV env; we set environment=PROD so DEV file is skipped
-        from confiddle.config.enums.config_environment import ConfigEnvironment
-
-        dev_file = config_dir / "config.dev.json"
-        dev_file.write_text(json.dumps({"name": "from_dev"}))
+        (config_dir / "config.json").write_text(json.dumps({}))
+        (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
