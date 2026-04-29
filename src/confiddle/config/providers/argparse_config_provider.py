@@ -25,4 +25,5 @@ class ArgparseConfigProvider(DictConfigProvider):
 
         ## Strip None values, argparse uses None as the sentinel for "not provided"
         argparse_args = {k: v for k, v in argparse_args.items() if v is not None}
+
         super().__init__(model, DictProviderConfig(data=argparse_args))
