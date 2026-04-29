@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle import Confiddle, KwargProviderConfig
+from confiddle import Confiddle, DictProviderConfig
 
 
 class SampleModel(BaseModel):
@@ -62,5 +62,5 @@ class TestLoadConfig:
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(json_file=JsonConfigProviderConfigModel(directory_path=config_dir))
         )
-        result = confiddle.load_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
-        assert result.name == "from_kwarg"
+        result = confiddle.load_config(SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_dict"})])
+        assert result.name == "from_dict"

@@ -7,14 +7,12 @@ from confiddle.config.models.providers.argparse_config_provider_config_model imp
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 from confiddle.config.providers.argparse_config_provider import ArgparseConfigProvider
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.config.providers.dict_config_provider import DictConfigProvider
 from confiddle.config.providers.env_var_config_provider import EnvVarConfigProvider
 from confiddle.config.providers.json_config_provider import JsonConfigProvider
-from confiddle.config.providers.kwarg_config_provider import KwargConfigProvider
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -39,7 +37,5 @@ class ConfigProviderFactory:
             return DictConfigProvider(model, provider_config)
         elif isinstance(provider_config, JsonConfigProviderConfigModel):
             return JsonConfigProvider(model, provider_config, environment=environment)
-        elif isinstance(provider_config, KwargProviderConfig):
-            return KwargConfigProvider(model, provider_config)
         else:
             raise ValueError(f"Unsupported provider config type: {type(provider_config)}")

@@ -6,7 +6,6 @@ from confiddle.config.models.providers.argparse_config_provider_config_model imp
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 
 __all__ = [
@@ -18,6 +17,5 @@ __all__ = [
     "ConfiddleConfigModel",
     "EnvVarConfigProviderConfigModel",
     "JsonConfigProviderConfigModel",
-    "KwargProviderConfig",
     "BaseProviderConfigModel",
 ]

@@ -12,7 +12,6 @@ from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 
 
 class SampleModel(BaseModel):
@@ -45,7 +44,7 @@ class TestBaseData:
         result = bootstrapped_manager.get_config(
             SampleModel,
             base_data={"name": "seeded"},
-            provider_configs=[KwargProviderConfig(name="overwritten")],
+            provider_configs=[DictProviderConfig(data={"name": "overwritten"})],
         )
         assert result.name == "overwritten"
 
@@ -89,12 +88,12 @@ class TestJsonProvider:
 
 
 class TestProviderData:
-    def test_kwarg_provider_data_applied(self, bootstrapped_manager: ConfigManager):
+    def test_dict_provider_data_applied(self, bootstrapped_manager: ConfigManager):
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_configs=[KwargProviderConfig(name="from_kwarg")],
+            provider_configs=[DictProviderConfig(data={"name": "from_dict"})],
         )
-        assert result.name == "from_kwarg"
+        assert result.name == "from_dict"
 
     def test_argparse_provider_data_applied(self, bootstrapped_manager: ConfigManager):
         result = bootstrapped_manager.get_config(
@@ -103,26 +102,28 @@ class TestProviderData:
         )
         assert result.value == 99
 
-    def test_kwarg_overrides_json(self, bootstrapped_manager: ConfigManager, config_file: Path):
+    def test_dict_overrides_json(self, bootstrapped_manager: ConfigManager, config_file: Path):
         result = bootstrapped_manager.get_config(
             SampleModel,
-            provider_configs=[KwargProviderConfig(name="kwarg_wins")],
+            provider_configs=[DictProviderConfig(data={"name": "dict_wins"})],
         )
-        assert result.name == "kwarg_wins"
+        assert result.name == "dict_wins"
 
 
 class TestHierarchyOrder:
     def test_later_provider_overwrites_earlier(self, config_dir: Path):
-        # BASE json sets name="from_base"; KWARG (later in hierarchy) should win
+        # BASE json sets name="from_base"; DICT (later in hierarchy) should win
         (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-            hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG],
+            hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT],
         )
-        result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
-        assert result.name == "from_kwarg"
+        result = config_manager.get_config(
+            SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_dict"})]
+        )
+        assert result.name == "from_dict"
 
     def test_env_json_overwrites_base_json(self, config_dir: Path):
         # BASE loads first, then DEV env file - DEV should win
@@ -151,32 +152,34 @@ class TestHierarchyOrder:
         )
         assert result.name == "from_argparse"
 
-    def test_kwarg_overwrites_argparse(self, bootstrapped_manager: ConfigManager):
+    def test_dict_overwrites_argparse(self, bootstrapped_manager: ConfigManager):
         bootstrapped_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(
                 directory_path=bootstrapped_manager.confiddle_config.json_file.directory_path
             ),
-            hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.KWARG],
+            hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.DICT],
         )
         result = bootstrapped_manager.get_config(
             SampleModel,
             provider_configs=[
                 ArgparseProviderConfig(args={"name": "from_argparse"}),
-                KwargProviderConfig(name="from_kwarg"),
+                DictProviderConfig(data={"name": "from_dict"}),
             ],
         )
-        assert result.name == "from_kwarg"
+        assert result.name == "from_dict"
 
     def test_custom_hierarchy_order_respected(self, config_dir: Path):
-        # Reversed: KWARG first, BASE last - BASE json should win
+        # Reversed: DICT first, BASE last - BASE json should win
         (config_dir / "config.json").write_text(json.dumps({"name": "from_base"}))
 
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             json_file=JsonConfigProviderConfigModel(directory_path=config_dir),
-            hierarchy=[ConfigFlavor.KWARG, ConfigFlavor.JSON],
+            hierarchy=[ConfigFlavor.DICT, ConfigFlavor.JSON],
         )
-        result = config_manager.get_config(SampleModel, provider_configs=[KwargProviderConfig(name="from_kwarg")])
+        result = config_manager.get_config(
+            SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_dict"})]
+        )
         assert result.name == "from_base"
 
 
@@ -190,7 +193,6 @@ class TestBuildProviderCoverage:
             )
             # Provide data for dict-based flavors so they aren't skipped as None
             providers = [
-                KwargProviderConfig(name="x"),
                 ArgparseProviderConfig(args={"name": "x"}),
                 DictProviderConfig(data={"name": "x"}),
             ]
@@ -222,7 +224,7 @@ class TestOverlays:
         result = bootstrapped_manager.get_config(
             SampleModel,
             provider_configs=[
-                KwargProviderConfig(name="kwarg_loses"),
+                DictProviderConfig(data={"name": "first_dict"}),
                 DictProviderConfig(data={"name": "overlay_wins"}),
             ],
         )

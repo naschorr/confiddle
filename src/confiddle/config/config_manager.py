@@ -9,7 +9,6 @@ from confiddle.config.factories.config_provider_factory import ConfigProviderFac
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 from confiddle.config.models.providers.base_provider_config_model import BaseProviderConfigModel
 from confiddle.config.providers.base_config_provider import BaseConfigProvider
 from confiddle.utilities.dict_merger import DictMerger
@@ -85,8 +84,6 @@ class ConfigManager:
                 result.extend(
                     self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.ARGPARSE, [])
                 )
-            elif item is ConfigFlavor.KWARG:
-                result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.KWARG, []))
             elif item is ConfigFlavor.DICT:
                 result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.DICT, []))
 
@@ -99,8 +96,6 @@ class ConfigManager:
         for pc in provider_configs:
             if isinstance(pc, ArgparseProviderConfig):
                 by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(pc)
-            elif isinstance(pc, KwargProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.KWARG, []).append(pc)
             elif isinstance(pc, DictProviderConfig):
                 by_flavor.setdefault(ConfigFlavor.DICT, []).append(pc)
 

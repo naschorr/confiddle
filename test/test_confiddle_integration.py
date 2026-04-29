@@ -17,7 +17,7 @@ from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.providers.env_var_config_provider_config_model import EnvVarConfigProviderConfigModel
 from confiddle.config.models.providers.json_config_provider_config_model import JsonConfigProviderConfigModel
-from confiddle import Confiddle, ArgparseProviderConfig, KwargProviderConfig
+from confiddle import Confiddle, ArgparseProviderConfig, DictProviderConfig
 
 
 ## ── Models ─────────────────────────────────────────────────────────────────────
@@ -94,12 +94,10 @@ class TestSingleProvider:
         assert result.host == "env-host"
         assert result.port == 7000
 
-    def test_kwarg_only_loads_from_kwargs(self, tmp_path: Path):
-        # JSON file exists but should be ignored
-        _write_json(tmp_path / "config.json", {"host": "should-be-ignored"})
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.KWARG])
-        result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
-        assert result.host == "kwarg-host"
+    def test_dict_only_loads_from_dict(self, tmp_path: Path):
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.DICT])
+        result = confiddle.load_config(AppConfig, provider_configs=[DictProviderConfig(data={"host": "dict-host"})])
+        assert result.host == "dict-host"
 
     def test_argparse_only_loads_from_argparse_data(self):
         confiddle = _confiddle(hierarchy=[ConfigFlavor.ARGPARSE])
@@ -150,17 +148,17 @@ class TestArgparse:
         assert result.host == "cli-host"
         assert result.port == 9000  # from JSON - argparse did not supply it
 
-    def test_argparse_and_kwarg_both_present_kwarg_wins(self, tmp_path: Path):
-        # ARGPARSE before KWARG in hierarchy - kwarg should win
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.KWARG])
+    def test_argparse_and_dict_both_present_dict_wins(self, tmp_path: Path):
+        # ARGPARSE before DICT in hierarchy - dict should win
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.DICT])
         result = confiddle.load_config(
             AppConfig,
             provider_configs=[
                 ArgparseProviderConfig(args=self._parse(["--host", "cli-host"])),
-                KwargProviderConfig(host="kwarg-host"),
+                DictProviderConfig(data={"host": "dict-host"}),
             ],
         )
-        assert result.host == "kwarg-host"
+        assert result.host == "dict-host"
 
     def test_missing_argparse_data_silently_skipped(self, tmp_path: Path):
         # ARGPARSE in hierarchy but no providers supplied - should not error
@@ -200,17 +198,17 @@ class TestDisabledProviders:
         result = confiddle.load_config(AppConfig)
         assert result.host == "env-host"
 
-    def test_kwarg_data_ignored_when_kwarg_not_in_hierarchy(self, tmp_path: Path, monkeypatch):
+    def test_dict_data_ignored_when_dict_not_in_hierarchy(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("APP:HOST", "env-host")
-        # KWARG not in hierarchy - kwarg data passed to load_config must be ignored
+        # DICT not in hierarchy - dict data passed to load_config must be ignored
         confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.ENV_VAR])
-        result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
+        result = confiddle.load_config(AppConfig, provider_configs=[DictProviderConfig(data={"host": "dict-host"})])
         assert result.host == "env-host"
 
-    def test_missing_kwarg_data_does_not_error_when_kwarg_in_hierarchy(self, tmp_path: Path):
-        # KWARG is in hierarchy but no providers supplied - should be silently skipped
+    def test_missing_dict_data_does_not_error_when_dict_in_hierarchy(self, tmp_path: Path):
+        # DICT is in hierarchy but no providers supplied - should be silently skipped
         _write_json(tmp_path / "config.json", {"host": "file-host"})
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT])
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
 
@@ -243,12 +241,12 @@ class TestDisabledProviders:
 class TestMultiProviderOrdering:
     """Later providers in the hierarchy win when the same key is present in multiple sources."""
 
-    def test_kwarg_overrides_json(self, tmp_path: Path):
+    def test_dict_overrides_json(self, tmp_path: Path):
         _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
-        result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host")])
-        assert result.host == "kwarg-host"
-        assert result.port == 9000  # from JSON - kwarg did not supply it
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT])
+        result = confiddle.load_config(AppConfig, provider_configs=[DictProviderConfig(data={"host": "dict-host"})])
+        assert result.host == "dict-host"
+        assert result.port == 9000  # from JSON - dict did not supply it
 
     def test_env_overrides_json(self, tmp_path: Path, monkeypatch):
         _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000})
@@ -258,17 +256,19 @@ class TestMultiProviderOrdering:
         assert result.host == "env-host"
         assert result.port == 9000  # from JSON - env did not supply it
 
-    def test_kwarg_overrides_env_overrides_json(self, tmp_path: Path, monkeypatch):
+    def test_dict_overrides_env_overrides_json(self, tmp_path: Path, monkeypatch):
         _write_json(tmp_path / "config.json", {"host": "file-host", "port": 9000, "debug": False})
         monkeypatch.setenv("APP:HOST", "env-host")
         monkeypatch.setenv("APP:PORT", "7777")
         confiddle = _confiddle(
-            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.KWARG]
+            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.DICT]
         )
-        result = confiddle.load_config(AppConfig, provider_configs=[KwargProviderConfig(host="kwarg-host", debug=True)])
-        assert result.host == "kwarg-host"  # kwarg wins
+        result = confiddle.load_config(
+            AppConfig, provider_configs=[DictProviderConfig(data={"host": "dict-host", "debug": True})]
+        )
+        assert result.host == "dict-host"  # dict wins
         assert result.port == 7777  # env wins over json
-        assert result.debug is True  # kwarg wins
+        assert result.debug is True  # dict wins
 
     def test_json_base_then_env_environment_file(self, tmp_path: Path, monkeypatch):
         _write_json(tmp_path / "config.json", {"host": "base-host", "port": 8080})
@@ -322,7 +322,7 @@ class TestNestedConfig:
         assert result.database.host == "env-db-host"
         assert result.service.timeout == 90
 
-    def test_nested_json_base_overridden_by_kwargs(self, tmp_path: Path):
+    def test_nested_json_base_overridden_by_dict(self, tmp_path: Path):
         _write_json(
             tmp_path / "config.json",
             {
@@ -331,16 +331,16 @@ class TestNestedConfig:
                 "service": {"timeout": 30, "retries": 3},
             },
         )
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
-        # kwarg replaces the entire `app` top-level key (shallow merge)
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT])
+        # dict replaces the entire `app` top-level key (shallow merge)
         result = confiddle.load_config(
             FullConfig,
-            provider_configs=[KwargProviderConfig(app={"host": "override-host", "port": 9090, "debug": True})],
+            provider_configs=[DictProviderConfig(data={"app": {"host": "override-host", "port": 9090, "debug": True}})],
         )
         assert result.app.host == "override-host"
         assert result.app.port == 9090
         assert result.app.debug is True
-        # database and service untouched by kwarg
+        # database and service untouched by dict
         assert result.database.host == "base-db"
         assert result.service.retries == 3
 
@@ -354,13 +354,13 @@ class TestNestedConfig:
             tmp_path / "config.json",
             {"database": {"host": "base-host", "port": 5432, "name": "important-db"}},
         )
-        # kwarg only supplies `host` - `port` and `name` from the JSON are discarded
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.KWARG])
+        # dict only supplies `host` - `port` and `name` from the JSON are discarded
+        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT])
         result = confiddle.load_config(
             FullConfig,
-            provider_configs=[KwargProviderConfig(database={"host": "kwarg-host"})],
+            provider_configs=[DictProviderConfig(data={"database": {"host": "dict-host"}})],
         )
-        assert result.database.host == "kwarg-host"
+        assert result.database.host == "dict-host"
         assert result.database.port == 5432  # DatabaseConfig model default - NOT the JSON value
         assert result.database.name == "db"  # DatabaseConfig model default - NOT "important-db"
 
@@ -370,17 +370,17 @@ class TestNestedConfig:
         # Env vars set the service section
         monkeypatch.setenv("APP:SERVICE:TIMEOUT", "120")
         monkeypatch.setenv("APP:SERVICE:RETRIES", "5")
-        # Kwargs set the app section
+        # Dict sets the app section
         confiddle = _confiddle(
-            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.KWARG]
+            tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON, ConfigFlavor.ENV_VAR, ConfigFlavor.DICT]
         )
         result = confiddle.load_config(
             FullConfig,
-            provider_configs=[KwargProviderConfig(app={"host": "kwarg-host", "port": 443, "debug": True})],
+            provider_configs=[DictProviderConfig(data={"app": {"host": "dict-host", "port": 443, "debug": True}})],
         )
         assert result.database.host == "db-host"  # from JSON
         assert result.database.name == "mydb"
         assert result.service.timeout == 120  # from env
         assert result.service.retries == 5
-        assert result.app.host == "kwarg-host"  # from kwargs
+        assert result.app.host == "dict-host"  # from dict
         assert result.app.debug is True

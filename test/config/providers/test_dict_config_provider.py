@@ -3,10 +3,8 @@ from pydantic import BaseModel
 from confiddle.config.enums.merge_strategy import MergeStrategy
 from confiddle.config.models.providers.argparse_config_provider_config_model import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_config_provider_config_model import DictProviderConfig
-from confiddle.config.models.providers.kwarg_config_provider_config_model import KwargProviderConfig
 from confiddle.config.providers.argparse_config_provider import ArgparseConfigProvider
 from confiddle.config.providers.dict_config_provider import DictConfigProvider
-from confiddle.config.providers.kwarg_config_provider import KwargConfigProvider
 
 
 class SampleModel(BaseModel):
@@ -28,23 +26,17 @@ def test_dict_provider_scope_wraps_data():
     class DbModel(BaseModel):
         database: dict = {}
 
-    provider = DictConfigProvider(DbModel, DictProviderConfig(data={"password": "secret"}, scope="database.credentials"))
+    provider = DictConfigProvider(
+        DbModel, DictProviderConfig(data={"password": "secret"}, scope="database.credentials")
+    )
     assert provider.get_config() == {"database": {"credentials": {"password": "secret"}}}
 
 
 def test_dict_provider_scope_is_deep():
-    provider = DictConfigProvider(SampleModel, DictProviderConfig(data={"password": "secret"}, scope="database.credentials"))
+    provider = DictConfigProvider(
+        SampleModel, DictProviderConfig(data={"password": "secret"}, scope="database.credentials")
+    )
     assert provider.merge_strategy is MergeStrategy.DEEP
-
-
-def test_kwarg_provider_wraps_kwargs():
-    provider = KwargConfigProvider(SampleModel, KwargProviderConfig(name="x"))
-    assert provider.get_config() == {"name": "x"}
-
-
-def test_kwarg_provider_is_shallow():
-    provider = KwargConfigProvider(SampleModel, KwargProviderConfig(name="x"))
-    assert provider.merge_strategy is MergeStrategy.SHALLOW
 
 
 def test_argparse_provider_wraps_dict():
