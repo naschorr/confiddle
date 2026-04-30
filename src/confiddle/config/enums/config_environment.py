@@ -7,5 +7,5 @@ class ConfigEnvironment(str, Enum):
     """
 
     DEV = "dev"
-    PROD = "prod"
     TEST = "test"
+    PROD = "prod"
