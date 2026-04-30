@@ -46,28 +46,10 @@ class ConfiddleConfigModel(BaseModel):
         examples=[_DEFAULT_CONFIG_ENVIRONMENT],
     )
 
-    hierarchy: list[ConfigFlavor | ConfigEnvironment] = Field(
+    hierarchy: list[ConfigFlavor] = Field(
         description="The order in which to apply configurations. Configurations will be applied in the order they are listed, with later configurations overwriting earlier ones.",
         default_factory=lambda: list(_DEFAULT_HIERARCHY),
         examples=[_DEFAULT_HIERARCHY],
     )
 
-    @field_validator("hierarchy", mode="before")
-    @classmethod
-    def _coerce_hierarchy_values(cls, values: list) -> list:
-        result = []
-        for value in values:
-            if isinstance(value, (ConfigFlavor, ConfigEnvironment)):
-                result.append(value)
-                continue
-            for enum_cls in (ConfigFlavor, ConfigEnvironment):
-                try:
-                    result.append(enum_cls(value))
-                    break
-                except ValueError:
-                    continue
-            else:
-                raise ValueError(f"'{value}' is not a valid ConfigFlavor or ConfigEnvironment value")
-        return result
-
-    ## TODO: Validator to warn of mixed environments in the hierarchy? It could be unsafe to mix test/dev/prod environments together
+    ## TODO: Validator to trim `hierarchy` to only include unique items (sets are unordered)
