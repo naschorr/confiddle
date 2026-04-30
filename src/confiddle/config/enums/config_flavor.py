@@ -9,4 +9,5 @@ class ConfigFlavor(str, Enum):
     ARGPARSE = "argparse"
     DICT = "dict"
     ENV_VAR = "env_var"
-    JSON = "base"
+    JSON = "json"
+    JSON_ENV = "json_env"

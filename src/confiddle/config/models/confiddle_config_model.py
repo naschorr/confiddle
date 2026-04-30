@@ -10,7 +10,7 @@ from confiddle.config.models.providers.json_provider_config import JsonProviderC
 _DEFAULT_CONFIG_ENVIRONMENT = ConfigEnvironment.DEV
 _DEFAULT_HIERARCHY = [
     ConfigFlavor.JSON,
-    _DEFAULT_CONFIG_ENVIRONMENT,
+    ConfigFlavor.JSON_ENV,
     ConfigFlavor.ENV_VAR,
     ConfigFlavor.ARGPARSE,
     ConfigFlavor.DICT,
