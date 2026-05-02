@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, Callable, TypeVar
 
 T = TypeVar("T")
 
@@ -35,11 +35,21 @@ class FieldValidator:
         return path
 
     @staticmethod
-    def coerce_to_list(v: T | list[T]) -> list[T]:
-        """Coerce a single instance of T or a list of T into a list of T."""
-        return v if isinstance(v, list) else [v]
+    def coerce(target_type: type, *, transform: Callable[[Any], Any] | None = None) -> Callable[[Any], Any]:
+        """Return a BeforeValidator-compatible coercion function.
 
-    @staticmethod
-    def coerce_to_path(v: str | Path) -> Path:
-        """Coerce a string or Path to a Path object."""
-        return Path(v)
+        If *value* is already an instance of *target_type* it is returned unchanged.
+        Otherwise *transform* is called if provided, else ``target_type(value)`` is tried.
+        """
+
+        def _coerce(value: Any) -> Any:
+            if isinstance(value, target_type):
+                return value
+            try:
+                if transform is not None:
+                    return transform(value)
+                return target_type(value)
+            except (TypeError, AttributeError) as exc:
+                raise ValueError(str(exc)) from exc
+
+        return _coerce

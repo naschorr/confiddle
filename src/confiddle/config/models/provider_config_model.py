@@ -8,11 +8,23 @@ from confiddle.config.models.providers.env_var_provider_config import EnvVarProv
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle.helpers.field_validator import FieldValidator
 
+_wrap_in_list = lambda v: [v]
 
-_ArgparseProviders = Annotated[list[ArgparseProviderConfig], BeforeValidator(FieldValidator.coerce_to_list)]
-_DictProviders = Annotated[list[DictProviderConfig], BeforeValidator(FieldValidator.coerce_to_list)]
-_EnvVarProviders = Annotated[list[EnvVarProviderConfig], BeforeValidator(FieldValidator.coerce_to_list)]
-_JsonFileProviders = Annotated[list[JsonProviderConfig], BeforeValidator(FieldValidator.coerce_to_list)]
+_ArgparseProviders = Annotated[
+    list[ArgparseProviderConfig], BeforeValidator(FieldValidator.coerce(list, transform=_wrap_in_list))
+]
+_ClickProviders = Annotated[
+    list[ClickProviderConfig], BeforeValidator(FieldValidator.coerce(list, transform=_wrap_in_list))
+]
+_DictProviders = Annotated[
+    list[DictProviderConfig], BeforeValidator(FieldValidator.coerce(list, transform=_wrap_in_list))
+]
+_EnvVarProviders = Annotated[
+    list[EnvVarProviderConfig], BeforeValidator(FieldValidator.coerce(list, transform=_wrap_in_list))
+]
+_JsonFileProviders = Annotated[
+    list[JsonProviderConfig], BeforeValidator(FieldValidator.coerce(list, transform=_wrap_in_list))
+]
 
 
 class ProviderConfigModel(BaseModel):

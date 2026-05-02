@@ -61,33 +61,53 @@ class TestFileExistsValidator:
             FieldValidator.file_exists_validator(tmp_path)
 
 
-class TestCoerceToList:
+class TestCoerceList:
     def test_list_is_returned_unchanged(self):
         items = [1, 2, 3]
-        assert FieldValidator.coerce_to_list(items) is items
+        assert FieldValidator.coerce(list, transform=lambda v: [v])(items) is items
 
     def test_single_item_is_wrapped_in_list(self):
-        assert FieldValidator.coerce_to_list(42) == [42]
+        assert FieldValidator.coerce(list, transform=lambda v: [v])(42) == [42]
 
     def test_single_string_is_wrapped_in_list(self):
-        assert FieldValidator.coerce_to_list("hello") == ["hello"]
+        assert FieldValidator.coerce(list, transform=lambda v: [v])("hello") == ["hello"]
 
     def test_empty_list_is_returned_unchanged(self):
-        assert FieldValidator.coerce_to_list([]) == []
+        assert FieldValidator.coerce(list, transform=lambda v: [v])([]) == []
 
 
-class TestCoerceToPath:
+class TestCoercePath:
     def test_string_is_converted_to_path(self, tmp_path: Path):
-        result = FieldValidator.coerce_to_path(str(tmp_path))
+        result = FieldValidator.coerce(Path)(str(tmp_path))
         assert isinstance(result, Path)
         assert result == tmp_path
 
     def test_path_is_returned_as_path(self, tmp_path: Path):
-        result = FieldValidator.coerce_to_path(tmp_path)
+        result = FieldValidator.coerce(Path)(tmp_path)
         assert isinstance(result, Path)
         assert result == tmp_path
 
     def test_relative_string_produces_path(self):
-        result = FieldValidator.coerce_to_path(".")
+        result = FieldValidator.coerce(Path)(".")
         assert isinstance(result, Path)
         assert result == Path(".")
+
+
+class TestCoerceDict:
+    def test_dict_is_returned_unchanged(self):
+        d = {"a": 1}
+        assert FieldValidator.coerce(dict, transform=vars)(d) is d
+
+    def test_transform_applied_to_non_dict(self):
+        class Ns:
+            def __init__(self):
+                self.x = 1
+        assert FieldValidator.coerce(dict, transform=vars)(Ns()) == {"x": 1}
+
+    def test_lambda_transform_extracts_attribute(self):
+        class Ctx:
+            params = {"host": "localhost"}
+        assert FieldValidator.coerce(dict, transform=lambda v: v.params)(Ctx()) == {"host": "localhost"}
+
+    def test_constructor_fallback_when_no_transform(self):
+        assert FieldValidator.coerce(dict)({"a": 1}) == {"a": 1}

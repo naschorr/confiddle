@@ -19,7 +19,7 @@ class JsonProviderConfig(BaseProviderConfig):
 
     directory_path: Annotated[
         Path,
-        BeforeValidator(FieldValidator.coerce_to_path),
+        BeforeValidator(FieldValidator.coerce(Path)),
         AfterValidator(FieldValidator.directory_exists_validator),
     ] = Field(
         description="The directory to search for configuration files (relative to the current working directory). If not provided, configuration files will be ignored.",
