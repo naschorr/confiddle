@@ -144,13 +144,6 @@ class TestHierarchyOrder:
 
     def test_dict_overwrites_argparse(self, bootstrapped_manager: ConfigManager):
         bootstrapped_manager.confiddle_config = ConfiddleConfigModel(
-            app=ProviderConfigModel(
-                json_file_provider=[
-                    JsonProviderConfig(
-                        directory_path=bootstrapped_manager.confiddle_config.app.json_file_provider[0].directory_path
-                    )
-                ]
-            ),
             hierarchy=[ConfigFlavor.ARGPARSE, ConfigFlavor.DICT],
         )
         result = bootstrapped_manager.get_config(

@@ -55,7 +55,7 @@ def _write_json(path: Path, data: dict) -> None:
 
 
 def _confiddle(
-    *, tmp_path: Path = None, hierarchy: list, env_prefix: str = "APP", env_delimiter: str = ":"
+    *, tmp_path: Path | None = None, hierarchy: list, env_prefix: str = "APP", env_delimiter: str = ":"
 ) -> Confiddle:
     """Build a Confiddle instance with an explicit hierarchy and no bootstrap side-effects."""
     return Confiddle(
