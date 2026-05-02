@@ -38,3 +38,8 @@ class FieldValidator:
     def coerce_to_list(v: T | list[T]) -> list[T]:
         """Coerce a single instance of T or a list of T into a list of T."""
         return v if isinstance(v, list) else [v]
+
+    @staticmethod
+    def coerce_to_path(v: str | Path) -> Path:
+        """Coerce a string or Path to a Path object."""
+        return Path(v)

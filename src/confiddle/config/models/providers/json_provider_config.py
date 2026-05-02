@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
 
-from pydantic import Field, AfterValidator
+from pydantic import Field, AfterValidator, BeforeValidator
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
@@ -19,6 +19,7 @@ class JsonProviderConfig(BaseProviderConfig):
 
     directory_path: Annotated[
         Path,
+        BeforeValidator(FieldValidator.coerce_to_path),
         AfterValidator(FieldValidator.directory_exists_validator),
     ] = Field(
         description="The directory to search for configuration files (relative to the current working directory). If not provided, configuration files will be ignored.",
@@ -39,3 +40,13 @@ class JsonProviderConfig(BaseProviderConfig):
     @property
     def config_flavor(self) -> ConfigFlavor:
         return ConfigFlavor.JSON_ENV if self.environment is not None else ConfigFlavor.JSON
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            directory_path: str | Path,
+            filename_template: str = ...,
+            environment: Optional[ConfigEnvironment] = ...,
+        ) -> None: ...

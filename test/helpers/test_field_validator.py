@@ -59,3 +59,35 @@ class TestFileExistsValidator:
     def test_raises_when_path_is_directory(self, tmp_path: Path):
         with pytest.raises(ValueError, match="does not exist or is not a file"):
             FieldValidator.file_exists_validator(tmp_path)
+
+
+class TestCoerceToList:
+    def test_list_is_returned_unchanged(self):
+        items = [1, 2, 3]
+        assert FieldValidator.coerce_to_list(items) is items
+
+    def test_single_item_is_wrapped_in_list(self):
+        assert FieldValidator.coerce_to_list(42) == [42]
+
+    def test_single_string_is_wrapped_in_list(self):
+        assert FieldValidator.coerce_to_list("hello") == ["hello"]
+
+    def test_empty_list_is_returned_unchanged(self):
+        assert FieldValidator.coerce_to_list([]) == []
+
+
+class TestCoerceToPath:
+    def test_string_is_converted_to_path(self, tmp_path: Path):
+        result = FieldValidator.coerce_to_path(str(tmp_path))
+        assert isinstance(result, Path)
+        assert result == tmp_path
+
+    def test_path_is_returned_as_path(self, tmp_path: Path):
+        result = FieldValidator.coerce_to_path(tmp_path)
+        assert isinstance(result, Path)
+        assert result == tmp_path
+
+    def test_relative_string_produces_path(self):
+        result = FieldValidator.coerce_to_path(".")
+        assert isinstance(result, Path)
+        assert result == Path(".")

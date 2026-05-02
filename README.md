@@ -74,8 +74,6 @@ class AppConfig(BaseModel):
 
 ```python
 ## main.py
-from pathlib import Path
-
 from confiddle import (
     Confiddle,
     ConfiddleConfigModel,
@@ -89,8 +87,8 @@ from app_config import AppConfig
 confiddle = Confiddle(
     ConfiddleConfigModel(
         app=ProviderConfigModel(
-            ## `directory_path=Path(".")` searches for config JSON files at the current working directory
-            json_file_provider=JsonProviderConfig(directory_path=Path(".")),
+            ## `directory_path="."`  searches for config JSON files at the current working directory
+            json_file_provider=JsonProviderConfig(directory_path="."),
             ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
             env_var_provider=EnvVarProviderConfig(prefix="MYAPP"),
         ),

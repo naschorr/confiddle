@@ -239,3 +239,27 @@ class TestValidation:
         result = p.get_config()
         model = StrictModel(**result)
         assert model.count == 99
+
+
+## ── directory_path coercion ───────────────────────────────────────────────────
+
+
+class TestDirectoryPathCoercion:
+    def test_accepts_path_object(self, tmp_path: Path):
+        (tmp_path / "config.json").write_text(json.dumps({}))
+        config = JsonProviderConfig(directory_path=tmp_path, filename_template="config.json")
+        assert config.directory_path == tmp_path
+
+    def test_accepts_string_and_stores_as_path(self, tmp_path: Path):
+        (tmp_path / "config.json").write_text(json.dumps({}))
+        config = JsonProviderConfig(directory_path=str(tmp_path), filename_template="config.json")
+        assert isinstance(config.directory_path, Path)
+        assert config.directory_path == tmp_path
+
+    def test_string_directory_path_loads_file(self, tmp_path: Path):
+        (tmp_path / "config.json").write_text(json.dumps({"name": "from_string_path"}))
+        provider = JsonProvider(
+            FlatModel,
+            JsonProviderConfig(directory_path=str(tmp_path), filename_template="config.json"),
+        )
+        assert provider.get_config()["name"] == "from_string_path"
