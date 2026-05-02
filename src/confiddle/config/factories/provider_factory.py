@@ -3,11 +3,13 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.click_provider_config import ClickProviderConfig
 from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 from confiddle.config.providers.argparse_provider import ArgparseProvider
+from confiddle.config.providers.click_provider import ClickProvider
 from confiddle.config.providers.base_provider import BaseProvider
 from confiddle.config.providers.dict_provider import DictProvider
 from confiddle.config.providers.env_var_provider import EnvVarProvider
@@ -28,6 +30,8 @@ class ProviderFactory:
     ) -> BaseProvider:
         if isinstance(provider_config, ArgparseProviderConfig):
             return ArgparseProvider(model, provider_config)
+        elif isinstance(provider_config, ClickProviderConfig):
+            return ClickProvider(model, provider_config)
         elif isinstance(provider_config, EnvVarProviderConfig):
             return EnvVarProvider(model, provider_config)
         elif isinstance(provider_config, DictProviderConfig):

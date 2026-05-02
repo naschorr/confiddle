@@ -84,6 +84,7 @@ class ConfigManager:
         provider_configs: list[BaseProviderConfig] = []
 
         provider_configs.extend(provider_config_model.argparse_provider)
+        provider_configs.extend(provider_config_model.click_provider)
         provider_configs.extend(provider_config_model.env_var_provider)
         provider_configs.extend(provider_config_model.dict_provider)
         provider_configs.extend(provider_config_model.json_file_provider)

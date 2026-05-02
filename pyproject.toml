@@ -45,6 +45,7 @@ source = "https://github.com/naschorr/confiddle"
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0.3",
+    "click>=8",
 ]
 deploy = [
     "hatchling>=1.29.0",

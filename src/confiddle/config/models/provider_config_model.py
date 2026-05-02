@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BaseModel, BeforeValidator, Field
 
 from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.click_provider_config import ClickProviderConfig
 from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
@@ -37,6 +38,11 @@ class ProviderConfigModel(BaseModel):
         default_factory=list,
     )
 
+    click_provider: _ClickProviders = Field(
+        description="Configuration for the Click provider.",
+        default_factory=list,
+    )
+
     dict_provider: _DictProviders = Field(
         description="Configuration for the dict provider.",
         default_factory=list,
@@ -58,6 +64,7 @@ class ProviderConfigModel(BaseModel):
             self,
             *,
             argparse_provider: ArgparseProviderConfig | list[ArgparseProviderConfig] = ...,
+            click_provider: ClickProviderConfig | list[ClickProviderConfig] = ...,
             dict_provider: DictProviderConfig | list[DictProviderConfig] = ...,
             env_var_provider: EnvVarProviderConfig | list[EnvVarProviderConfig] = ...,
             json_file_provider: JsonProviderConfig | list[JsonProviderConfig] = ...,

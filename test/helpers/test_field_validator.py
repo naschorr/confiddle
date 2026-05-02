@@ -102,11 +102,13 @@ class TestCoerceDict:
         class Ns:
             def __init__(self):
                 self.x = 1
+
         assert FieldValidator.coerce(dict, transform=vars)(Ns()) == {"x": 1}
 
     def test_lambda_transform_extracts_attribute(self):
         class Ctx:
             params = {"host": "localhost"}
+
         assert FieldValidator.coerce(dict, transform=lambda v: v.params)(Ctx()) == {"host": "localhost"}
 
     def test_constructor_fallback_when_no_transform(self):
