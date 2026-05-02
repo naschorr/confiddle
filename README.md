@@ -90,9 +90,9 @@ confiddle = Confiddle(
     ConfiddleConfigModel(
         app=ProviderConfigModel(
             ## `directory_path=Path(".")` searches for config JSON files at the current working directory
-            json_file_provider=[JsonProviderConfig(directory_path=Path("."))],
+            json_file_provider=JsonProviderConfig(directory_path=Path(".")),
             ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
-            env_var_provider=[EnvVarProviderConfig(prefix="MYAPP")],
+            env_var_provider=EnvVarProviderConfig(prefix="MYAPP"),
         ),
         ## This tells it to only load production configurations, like config.prod.json above.
         ## Note that it'll still load the base configurations regardless, like config.json above.

@@ -1,4 +1,7 @@
 from pathlib import Path
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 class FieldValidator:
@@ -30,3 +33,8 @@ class FieldValidator:
         if not path.exists() or not path.is_file():
             raise ValueError(f"File {path} does not exist or is not a file")
         return path
+
+    @staticmethod
+    def coerce_to_list(v: T | list[T]) -> list[T]:
+        """Coerce a single instance of T or a list of T into a list of T."""
+        return v if isinstance(v, list) else [v]
