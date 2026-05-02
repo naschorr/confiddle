@@ -397,3 +397,47 @@ class TestNestedConfig:
         assert result.service.retries == 5
         assert result.app.host == "dict-host"  # from dict
         assert result.app.debug is True
+
+
+## ── Scoped providers ─────────────────────────────────────────────────────────
+
+
+class TestScopedProvider:
+    """DictProviderConfig.scope nests data under a key path before merging."""
+
+    def test_scope_nests_data_under_top_level_key(self):
+        confiddle = Confiddle(confiddle_config=ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT]))
+        result = confiddle.load_config(
+            FullConfig,
+            provider_configs=[DictProviderConfig(data={"host": "scoped-host", "port": 443}, scope="app")],
+        )
+        assert result.app.host == "scoped-host"
+        assert result.app.port == 443
+        assert result.database.host == "localhost"  # default - unaffected
+
+    def test_two_scoped_providers_same_key_deep_merged(self):
+        confiddle = Confiddle(confiddle_config=ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT]))
+        result = confiddle.load_config(
+            FullConfig,
+            provider_configs=[
+                DictProviderConfig(data={"host": "db-host"}, scope="database"),
+                DictProviderConfig(data={"port": 9999}, scope="database"),
+            ],
+        )
+        assert result.database.host == "db-host"
+        assert result.database.port == 9999  # both scoped providers merged
+
+    def test_scope_does_not_affect_other_top_level_keys(self, tmp_path: Path):
+        _write_json(tmp_path / "config.json", {"database": {"host": "json-db-host", "name": "mydb"}})
+        confiddle = Confiddle(
+            confiddle_config=ConfiddleConfigModel(
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=tmp_path)]),
+                hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT],
+            )
+        )
+        result = confiddle.load_config(
+            FullConfig,
+            provider_configs=[DictProviderConfig(data={"host": "scoped-host"}, scope="app")],
+        )
+        assert result.app.host == "scoped-host"  # from scoped dict
+        assert result.database.host == "json-db-host"  # from JSON, untouched

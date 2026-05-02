@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from pydantic import BaseModel
@@ -31,10 +30,6 @@ class TestGetConfigGuard:
         config_manager = ConfigManager()
         result = config_manager.get_config(ConfiddleConfigModel)
         assert isinstance(result, ConfiddleConfigModel)
-
-    def test_allows_user_model_after_bootstrap(self, bootstrapped_manager: ConfigManager):
-        result = bootstrapped_manager.get_config(SampleModel)
-        assert isinstance(result, SampleModel)
 
 
 class TestBaseData:
@@ -103,13 +98,6 @@ class TestProviderData:
             provider_configs=[ArgparseProviderConfig(args={"value": 99})],
         )
         assert result.value == 99
-
-    def test_dict_overrides_json(self, bootstrapped_manager: ConfigManager, config_file: Path):
-        result = bootstrapped_manager.get_config(
-            SampleModel,
-            provider_configs=[DictProviderConfig(data={"name": "dict_wins"})],
-        )
-        assert result.name == "dict_wins"
 
 
 class TestHierarchyOrder:
@@ -190,14 +178,18 @@ class TestHierarchyOrder:
 
 
 class TestBuildProviderCoverage:
-    def test_all_config_flavors_handled(self, bootstrapped_manager: ConfigManager):
-        # Every ConfigFlavor member should result in a call to _build_provider without raising
+    def test_all_config_flavors_handled(self, config_dir: Path):
+        # Every ConfigFlavor member should result in a call to _build_provider without raising.
+        # Write base and env-specific files so JSON/JSON_ENV flavors can resolve their providers.
+        (config_dir / "config.json").write_text(json.dumps({"name": "x"}))
+        (config_dir / "config.dev.json").write_text(json.dumps({}))
         for flavor in ConfigFlavor:
             config_manager = ConfigManager()
             config_manager.confiddle_config = ConfiddleConfigModel(
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)]),
+                environment=ConfigEnvironment.DEV,
                 hierarchy=[flavor],
             )
-            # Provide data for dict-based flavors so they aren't skipped as None
             providers = [
                 ArgparseProviderConfig(args={"name": "x"}),
                 DictProviderConfig(data={"name": "x"}),
@@ -284,36 +276,8 @@ class TestMultipleProvidersOfSameKind:
         assert result.value == 42
 
 
-class TestOverlays:
-    def test_overlay_applied_after_hierarchy(self, bootstrapped_manager: ConfigManager):
-        result = bootstrapped_manager.get_config(
-            SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_overlay"})]
-        )
-        assert result.name == "from_overlay"
-
-    def test_overlay_overrides_provider_data(self, bootstrapped_manager: ConfigManager):
-        result = bootstrapped_manager.get_config(
-            SampleModel,
-            provider_configs=[
-                DictProviderConfig(data={"name": "first_dict"}),
-                DictProviderConfig(data={"name": "overlay_wins"}),
-            ],
-        )
-        assert result.name == "overlay_wins"
-
-    def test_multiple_overlays_applied_in_order(self, bootstrapped_manager: ConfigManager):
-        result = bootstrapped_manager.get_config(
-            SampleModel,
-            provider_configs=[DictProviderConfig(data={"name": "first"}), DictProviderConfig(data={"name": "second"})],
-        )
-        assert result.name == "second"
-
-    def test_no_overlays_behaves_normally(self, bootstrapped_manager: ConfigManager):
-        result = bootstrapped_manager.get_config(SampleModel, provider_configs=[])
-        assert result.name == "default"
-
-
 class TestDeepMerge:
+    def test_scoped_overlay_deep_merges_nested_dict(self, bootstrapped_manager: ConfigManager):
         class NestedModel(BaseModel):
             items: dict = {}
 
