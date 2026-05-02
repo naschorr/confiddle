@@ -12,6 +12,7 @@ from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
 from confiddle.config.models.provider_config_model import ProviderConfigModel
 from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
 
@@ -218,6 +219,71 @@ class TestBuildProviderCoverage:
             assert result.name == env.value
 
 
+class TestMultipleProvidersOfSameKind:
+    def test_two_json_providers_second_wins_on_conflict(self, config_dir: Path):
+        # Two separate JSON directories; the second one is later in the provider list so it wins
+        first_dir = config_dir / "first"
+        second_dir = config_dir / "second"
+        first_dir.mkdir()
+        second_dir.mkdir()
+        (first_dir / "config.json").write_text(json.dumps({"name": "from_first", "value": 1}))
+        (second_dir / "config.json").write_text(json.dumps({"name": "from_second"}))
+
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(
+                json_file_provider=[
+                    JsonProviderConfig(directory_path=first_dir),
+                    JsonProviderConfig(directory_path=second_dir),
+                ]
+            ),
+            hierarchy=[ConfigFlavor.JSON],
+        )
+        result = config_manager.get_config(SampleModel)
+        assert result.name == "from_second"  # second provider wins
+        assert result.value == 1  # only in first provider, preserved
+
+    def test_two_json_providers_non_conflicting_keys_both_applied(self, config_dir: Path):
+        first_dir = config_dir / "first"
+        second_dir = config_dir / "second"
+        first_dir.mkdir()
+        second_dir.mkdir()
+        (first_dir / "config.json").write_text(json.dumps({"name": "from_first"}))
+        (second_dir / "config.json").write_text(json.dumps({"value": 99}))
+
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(
+                json_file_provider=[
+                    JsonProviderConfig(directory_path=first_dir),
+                    JsonProviderConfig(directory_path=second_dir),
+                ]
+            ),
+            hierarchy=[ConfigFlavor.JSON],
+        )
+        result = config_manager.get_config(SampleModel)
+        assert result.name == "from_first"
+        assert result.value == 99
+
+    def test_two_env_var_providers_different_prefixes_both_applied(self, config_dir: Path, monkeypatch):
+        monkeypatch.setenv("APP:NAME", "from_app")
+        monkeypatch.setenv("SVC:VALUE", "42")
+
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(
+                env_var_provider=[
+                    EnvVarProviderConfig(prefix="APP"),
+                    EnvVarProviderConfig(prefix="SVC"),
+                ]
+            ),
+            hierarchy=[ConfigFlavor.ENV_VAR],
+        )
+        result = config_manager.get_config(SampleModel)
+        assert result.name == "from_app"
+        assert result.value == 42
+
+
 class TestOverlays:
     def test_overlay_applied_after_hierarchy(self, bootstrapped_manager: ConfigManager):
         result = bootstrapped_manager.get_config(
@@ -248,7 +314,6 @@ class TestOverlays:
 
 
 class TestDeepMerge:
-    def test_scoped_overlay_deep_merges_nested_dict(self, bootstrapped_manager: ConfigManager):
         class NestedModel(BaseModel):
             items: dict = {}
 
