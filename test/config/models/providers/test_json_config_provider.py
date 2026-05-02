@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
+from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle.config.providers.json_provider import JsonProvider
 
@@ -263,3 +264,20 @@ class TestDirectoryPathCoercion:
             JsonProviderConfig(directory_path=str(tmp_path), filename_template="config.json"),
         )
         assert provider.get_config()["name"] == "from_string_path"
+
+
+## ── config_flavor property ───────────────────────────────────────────────────
+
+
+class TestConfigFlavor:
+    def test_returns_json_when_environment_is_none(self):
+        config = JsonProviderConfig(directory_path=Path("."), environment=None)
+        assert config.config_flavor is ConfigFlavor.JSON
+
+    def test_returns_json_env_when_environment_is_dev(self):
+        config = JsonProviderConfig(directory_path=Path("."), environment=ConfigEnvironment.DEV)
+        assert config.config_flavor is ConfigFlavor.JSON_ENV
+
+    def test_returns_json_env_when_environment_is_prod(self):
+        config = JsonProviderConfig(directory_path=Path("."), environment=ConfigEnvironment.PROD)
+        assert config.config_flavor is ConfigFlavor.JSON_ENV

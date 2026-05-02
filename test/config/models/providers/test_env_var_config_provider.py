@@ -3,6 +3,7 @@ import os
 import pytest
 from pydantic import BaseModel
 
+from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.providers.env_var_provider import EnvVarProvider
 
@@ -205,3 +206,9 @@ class TestSchemaAwareIngest:
         monkeypatch.setenv("MYAPP:DB:HOST", "db.local")
         result = EnvVarProvider(FlatModel, EnvVarProviderConfig(prefix="MYAPP", delimiter=":")).get_config()
         assert result["db"] == {"host": "db.local"}
+
+
+class TestConfigFlavor:
+    def test_env_var_provider_config_flavor_is_env_var(self):
+        config = EnvVarProviderConfig(prefix="APP")
+        assert config.config_flavor is ConfigFlavor.ENV_VAR

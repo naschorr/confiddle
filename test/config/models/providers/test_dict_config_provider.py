@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.enums.merge_strategy import MergeStrategy
 from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
@@ -51,3 +52,13 @@ def test_argparse_provider_wraps_namespace():
 def test_argparse_provider_is_shallow():
     provider = ArgparseProvider(SampleModel, ArgparseProviderConfig(args={"name": "x"}))
     assert provider.merge_strategy is MergeStrategy.SHALLOW
+
+
+class TestConfigFlavor:
+    def test_dict_provider_config_flavor_is_dict(self):
+        config = DictProviderConfig(data={})
+        assert config.config_flavor is ConfigFlavor.DICT
+
+    def test_argparse_provider_config_flavor_is_argparse(self):
+        config = ArgparseProviderConfig(args={})
+        assert config.config_flavor is ConfigFlavor.ARGPARSE
