@@ -1,8 +1,7 @@
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
-from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
 from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
@@ -26,8 +25,6 @@ class ProviderFactory:
         self,
         model: type[T],
         provider_config: BaseProviderConfig,
-        *,
-        environment: Optional[ConfigEnvironment] = None,
     ) -> BaseProvider:
         if isinstance(provider_config, ArgparseProviderConfig):
             return ArgparseProvider(model, provider_config)
@@ -36,6 +33,6 @@ class ProviderFactory:
         elif isinstance(provider_config, DictProviderConfig):
             return DictProvider(model, provider_config)
         elif isinstance(provider_config, JsonProviderConfig):
-            return JsonProvider(model, provider_config, environment=environment)
+            return JsonProvider(model, provider_config)
         else:
             raise ValueError(f"Unsupported provider config type: {type(provider_config)}")

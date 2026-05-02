@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
+from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 
 _DEFAULT_ENV_VAR_DELIMITER = ":"
@@ -23,3 +24,7 @@ class EnvVarProviderConfig(BaseProviderConfig):
         default=_DEFAULT_ENV_VAR_DELIMITER,
         examples=_EXAMPLE_ENV_VAR_DELIMITERS,
     )
+
+    @property
+    def config_flavor(self) -> ConfigFlavor:
+        return ConfigFlavor.ENV_VAR

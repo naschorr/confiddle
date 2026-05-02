@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -57,7 +56,6 @@ class TestFlatFields:
         p = JsonProvider(
             FlatModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         assert p.get_config()["name"] == "hello"
 
@@ -66,7 +64,6 @@ class TestFlatFields:
         p = JsonProvider(
             FlatModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         assert result == {"name": "hi", "value": 42}
@@ -76,7 +73,6 @@ class TestFlatFields:
         p = JsonProvider(
             FlatModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         assert p.get_config() == {}
 
@@ -85,7 +81,6 @@ class TestFlatFields:
             JsonProvider(
                 FlatModel,
                 JsonProviderConfig(directory_path=tmp_path, filename_template="missing.json"),
-                environment=None,
             )
 
 
@@ -99,7 +94,6 @@ class TestNestedIngest:
         p = JsonProvider(
             NestedModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -112,7 +106,6 @@ class TestNestedIngest:
         p = JsonProvider(
             NestedModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -128,7 +121,6 @@ class TestNestedIngest:
         p = JsonProvider(
             NestedModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         model = NestedModel(**result)
@@ -142,7 +134,6 @@ class TestNestedIngest:
         p = JsonProvider(
             DeepModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         model = DeepModel(**result)
@@ -157,8 +148,11 @@ class TestFilenameTemplates:
         (tmp_path / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
         p = JsonProvider(
             FlatModel,
-            JsonProviderConfig(directory_path=tmp_path, filename_template="config.{environment}.json"),
-            environment=ConfigEnvironment.DEV,
+            JsonProviderConfig(
+                directory_path=tmp_path,
+                filename_template="config.{environment}.json",
+                environment=ConfigEnvironment.DEV,
+            ),
         )
         assert p.get_config()["name"] == "from_dev"
 
@@ -166,8 +160,11 @@ class TestFilenameTemplates:
         (tmp_path / "config.prod.json").write_text(json.dumps({"name": "from_prod"}))
         p = JsonProvider(
             FlatModel,
-            JsonProviderConfig(directory_path=tmp_path, filename_template="config.{environment}.json"),
-            environment=ConfigEnvironment.PROD,
+            JsonProviderConfig(
+                directory_path=tmp_path,
+                filename_template="config.{environment}.json",
+                environment=ConfigEnvironment.PROD,
+            ),
         )
         assert p.get_config()["name"] == "from_prod"
 
@@ -176,8 +173,11 @@ class TestFilenameTemplates:
         for env in (None, ConfigEnvironment.DEV, ConfigEnvironment.PROD):
             p = JsonProvider(
                 FlatModel,
-                JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-                environment=env,
+                JsonProviderConfig(
+                    directory_path=tmp_path,
+                    filename_template="config.json",
+                    environment=env,
+                ),
             )
             assert p.get_config()["name"] == "shared"
 
@@ -186,7 +186,6 @@ class TestFilenameTemplates:
         p = JsonProvider(
             FlatModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.{environment}.json"),
-            environment=None,
         )
         assert p.file_path == tmp_path / "config.json"
 
@@ -195,10 +194,25 @@ class TestFilenameTemplates:
         (tmp_path / "config.dev.json").write_text(json.dumps({}))
         p = JsonProvider(
             FlatModel,
-            JsonProviderConfig(directory_path=tmp_path, filename_template="config.{environment}.json"),
-            environment=ConfigEnvironment.DEV,
+            JsonProviderConfig(
+                directory_path=tmp_path,
+                filename_template="config.{environment}.json",
+                environment=ConfigEnvironment.DEV,
+            ),
         )
         assert p.file_path == tmp_path / "config.dev.json"
+
+    def test_missing_env_file_returns_empty_dict(self, tmp_path):
+        # env-specific file is optional — missing file is a no-op, not an error
+        p = JsonProvider(
+            FlatModel,
+            JsonProviderConfig(
+                directory_path=tmp_path,
+                filename_template="config.{environment}.json",
+                environment=ConfigEnvironment.DEV,
+            ),
+        )
+        assert p.get_config() == {}
 
 
 ## ── Type coercion and validation ─────────────────────────────────────────────
@@ -211,7 +225,6 @@ class TestValidation:
         p = JsonProvider(
             StrictModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         with pytest.raises(ValidationError):
             p.get_config()
@@ -222,7 +235,6 @@ class TestValidation:
         p = JsonProvider(
             StrictModel,
             JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
-            environment=None,
         )
         result = p.get_config()
         model = StrictModel(**result)

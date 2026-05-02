@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
+from confiddle.config.models.provider_config_model import ProviderConfigModel
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle.config.config_manager import ConfigManager
 
@@ -36,5 +37,7 @@ def bootstrapped_manager(config_dir: Path) -> ConfigManager:
     (config_dir / "config.json").write_text("{}")
     (config_dir / "config.dev.json").write_text("{}")
     config_manager = ConfigManager()
-    config_manager.confiddle_config = ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
+    config_manager.confiddle_config = ConfiddleConfigModel(
+        app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)])
+    )
     return config_manager

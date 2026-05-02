@@ -1,14 +1,13 @@
 from typing import Optional, TypeVar, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.enums.merge_strategy import MergeStrategy
 from confiddle.config.factories.provider_factory import ProviderFactory
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
-from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
-from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
+from confiddle.config.models.provider_config_model import ProviderConfigModel
 from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 from confiddle.config.providers.base_provider import BaseProvider
 from confiddle.utilities.dict_merger import DictMerger
@@ -49,9 +48,27 @@ class ConfigManager:
                 "Call get_config(ConfiddleConfigModel, ...) first and assign the result to confiddle_config."
             )
 
+        confiddle_config = self._confiddle_config or ConfiddleConfigModel()
+        is_bootstrap = model is ConfiddleConfigModel
+        environment = None
+        if self._confiddle_config is not None and not is_bootstrap:
+            environment = self._confiddle_config.environment
+
+        providers: list[BaseProvider] = []
+        if is_bootstrap:
+            configured_provider_configs = self._build_provider_configs_from_provider_config_model(
+                confiddle_config.bootstrap
+            )
+            provider_config = configured_provider_configs + provider_configs
+        else:
+            configured_provider_configs = self._build_provider_configs_from_provider_config_model(confiddle_config.app)
+            provider_config = configured_provider_configs + provider_configs
+        providers = self._build_providers(model, is_bootstrap, environment, provider_config)
+
         merged = dict(base_data) if base_data else {}
-        for provider in self._build_providers(model, provider_configs):
+        for provider in providers:
             provider_config = provider.get_config()
+
             if provider.merge_strategy is MergeStrategy.DEEP:
                 merged = DictMerger.deep_merge(merged, provider_config)
             else:
@@ -61,40 +78,61 @@ class ConfigManager:
 
     ## Private
 
-    def _build_providers(self, model: type[T], provider_configs: list[BaseProviderConfig]) -> list[BaseProvider]:
-        confiddle_config = self._confiddle_config or ConfiddleConfigModel()
-        is_bootstrap = model is ConfiddleConfigModel
-        by_flavor = self._group_by_flavor(provider_configs)
-        json_config = confiddle_config.bootstrap.json_file if is_bootstrap else confiddle_config.json_file
-        env_config = confiddle_config.bootstrap.env_var if is_bootstrap else confiddle_config.env_var
+    def _build_provider_configs_from_provider_config_model(
+        self, provider_config_model: ProviderConfigModel
+    ) -> list[BaseProviderConfig]:
+        provider_configs: list[BaseProviderConfig] = []
 
-        result: list[BaseProvider] = []
-        for item in confiddle_config.hierarchy:
-            if item is ConfigFlavor.JSON:
-                if json_config.directory_path is not None:
-                    result.append(self._factory.build_provider(model, json_config, environment=None))
-            elif isinstance(item, ConfigEnvironment):
-                if item is confiddle_config.environment and json_config.directory_path is not None:
-                    result.append(self._factory.build_provider(model, json_config, environment=item))
-            elif item is ConfigFlavor.ENV_VAR:
-                result.append(self._factory.build_provider(model, env_config))
-            elif item is ConfigFlavor.ARGPARSE:
-                result.extend(
-                    self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.ARGPARSE, [])
-                )
-            elif item is ConfigFlavor.DICT:
-                result.extend(self._factory.build_provider(model, pc) for pc in by_flavor.get(ConfigFlavor.DICT, []))
+        provider_configs.extend(provider_config_model.argparse_provider)
+        provider_configs.extend(provider_config_model.env_var_provider)
+        provider_configs.extend(provider_config_model.dict_provider)
+        provider_configs.extend(provider_config_model.json_file_provider)
+
+        return provider_configs
+
+    def _inject_context(
+        self, provider_configs: list[BaseProviderConfig], environment: Optional[ConfigEnvironment]
+    ) -> list[BaseProviderConfig]:
+        """For each provider config that supports environment substitution, emit a base copy and an
+        environment-bound copy. Configs without an ``environment`` attribute are passed through as-is."""
+        result: list[BaseProviderConfig] = []
+        for provider_config in provider_configs:
+            result.append(provider_config)
+            if hasattr(provider_config, "environment") and environment is not None:
+                result.append(provider_config.model_copy(update={"environment": environment}))
+        return result
+
+    def _map_config_flavor_to_provider_configs(
+        self, provider_configs: list[BaseProviderConfig]
+    ) -> dict[ConfigFlavor, list[BaseProviderConfig]]:
+        result: dict[ConfigFlavor, list[BaseProviderConfig]] = {}
+        for provider_config in provider_configs:
+            result.setdefault(provider_config.config_flavor, []).append(provider_config)
 
         return result
 
-    def _group_by_flavor(
-        self, provider_configs: list[BaseProviderConfig]
-    ) -> dict[ConfigFlavor, list[BaseProviderConfig]]:
-        by_flavor: dict[ConfigFlavor, list[BaseProviderConfig]] = {}
-        for pc in provider_configs:
-            if isinstance(pc, ArgparseProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.ARGPARSE, []).append(pc)
-            elif isinstance(pc, DictProviderConfig):
-                by_flavor.setdefault(ConfigFlavor.DICT, []).append(pc)
+    def _build_providers(
+        self,
+        model: type[T],
+        is_bootstrap: bool,
+        environment: Optional[ConfigEnvironment],
+        provider_configs: list[BaseProviderConfig],
+    ) -> list[BaseProvider]:
+        confiddle_config = self._confiddle_config or ConfiddleConfigModel()
+        config_flavor_to_provider_config = self._map_config_flavor_to_provider_configs(
+            self._inject_context(provider_configs, environment)
+        )
 
-        return by_flavor
+        result: list[BaseProvider] = []
+        for hierarchy_element in confiddle_config.hierarchy:
+            for provider_config in config_flavor_to_provider_config.get(hierarchy_element, []):
+                try:
+                    provider = self._factory.build_provider(model, provider_config)
+                except Exception:
+                    if is_bootstrap:
+                        continue
+                    raise
+
+                result.append(provider)
+
+        return result

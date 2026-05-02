@@ -4,8 +4,10 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
+from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.confiddle_config_model import ConfiddleConfigModel
+from confiddle.config.models.provider_config_model import ProviderConfigModel
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle import Confiddle, DictProviderConfig
 
@@ -21,18 +23,21 @@ class TestBootstrap:
         assert isinstance(confiddle._config_manager.confiddle_config, ConfiddleConfigModel)
 
     def test_bootstrap_from_confiddle_config(self, config_dir: Path):
-        confiddle_config = ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
+        confiddle_config = ConfiddleConfigModel(
+            bootstrap=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)])
+        )
         confiddle = Confiddle(confiddle_config=confiddle_config)
-        assert confiddle._config_manager.confiddle_config.json_file.directory_path == config_dir
+        assert confiddle._config_manager.confiddle_config
+        assert confiddle._config_manager.confiddle_config.bootstrap.json_file_provider[0].directory_path == config_dir
 
     def test_bootstrap_with_no_args_uses_defaults(self):
         confiddle = Confiddle()
-        assert confiddle._config_manager.confiddle_config.env_var.prefix is None
+        assert confiddle._config_manager.confiddle_config.bootstrap.env_var_provider[0].prefix == "CONFIDDLE"
 
     def test_bootstrap_env_var_overrides_default(self, monkeypatch):
-        monkeypatch.setenv("CONFIDDLE:ENV_VAR:PREFIX", "MYAPP")
+        monkeypatch.setenv("CONFIDDLE:ENVIRONMENT", "test")
         confiddle = Confiddle()
-        assert confiddle._config_manager.confiddle_config.env_var.prefix == "MYAPP"
+        assert confiddle._config_manager.confiddle_config.environment == ConfigEnvironment.TEST
 
 
 class TestLoadConfig:
@@ -40,7 +45,9 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text("{}")
         (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
-            confiddle_config=ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
+            confiddle_config=ConfiddleConfigModel(
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)])
+            )
         )
         result = confiddle.load_config(SampleModel)
         assert isinstance(result, SampleModel)
@@ -49,7 +56,7 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text(json.dumps({"name": "from_file"}))
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(
-                json_file=JsonProviderConfig(directory_path=config_dir),
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)]),
                 hierarchy=[ConfigFlavor.JSON],
             )
         )
@@ -60,7 +67,9 @@ class TestLoadConfig:
         (config_dir / "config.json").write_text("{}")
         (config_dir / "config.dev.json").write_text("{}")
         confiddle = Confiddle(
-            confiddle_config=ConfiddleConfigModel(json_file=JsonProviderConfig(directory_path=config_dir))
+            confiddle_config=ConfiddleConfigModel(
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)])
+            )
         )
         result = confiddle.load_config(SampleModel, provider_configs=[DictProviderConfig(data={"name": "from_dict"})])
         assert result.name == "from_dict"
