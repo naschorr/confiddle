@@ -4,6 +4,7 @@ from typing import Optional
 
 from pydantic import Field
 
+from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 
 
@@ -16,9 +17,13 @@ class DictProviderConfig(BaseProviderConfig):
     at the same level are preserved. Without a scope the merge is shallow.
     """
 
-    data: dict = Field(description="Configuration values to merge into the configuration.")
+    data: dict = Field(description="Configuration values to merge into the configuration.", default={})
 
     scope: Optional[str] = Field(
         description='Optional dot-separated path at which to nest the data before merging (e.g. "database.credentials"). When set, the provider deep-merges so sibling keys are preserved.',
         default=None,
     )
+
+    @property
+    def config_flavor(self) -> ConfigFlavor:
+        return ConfigFlavor.DICT

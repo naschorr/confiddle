@@ -1,8 +1,12 @@
-from pydantic import BaseModel, Field, field_validator
+from pathlib import Path
+
+from pydantic import BaseModel, Field
 
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
-from confiddle.config.models.bootstrap_config_model import BootstrapConfigModel
+from confiddle.config.models.provider_config_model import ProviderConfigModel
+from confiddle.config.models.providers.argparse_provider_config import ArgparseProviderConfig
+from confiddle.config.models.providers.dict_provider_config import DictProviderConfig
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 
@@ -22,22 +26,17 @@ class ConfiddleConfigModel(BaseModel):
     Base model for configuring Confiddle
     """
 
-    bootstrap: BootstrapConfigModel = Field(
+    bootstrap: ProviderConfigModel = Field(
         description="Configuration for the Confiddle bootstrapper, which sets up the configuration providers and their settings so that Confiddle can run.",
-        default_factory=lambda: BootstrapConfigModel(
-            json_file=JsonProviderConfig(filename_template="confiddle.json"),
-            env_var=EnvVarProviderConfig(prefix="CONFIDDLE"),
+        default_factory=lambda: ProviderConfigModel(
+            env_var_provider=[EnvVarProviderConfig(prefix="CONFIDDLE")],
+            json_file_provider=[JsonProviderConfig(directory_path=Path("."), filename_template="confiddle.json")],
         ),
     )
 
-    env_var: EnvVarProviderConfig = Field(
-        description="Configuration for the environment variable provider for the application being configured.",
-        default_factory=EnvVarProviderConfig,
-    )
-
-    json_file: JsonProviderConfig = Field(
-        description="Configuration for the JSON file provider for the application being configured.",
-        default_factory=JsonProviderConfig,
+    app: ProviderConfigModel = Field(
+        description="Configuration for the application to be configured, which will be used to configure providers that load configuration for the application.",
+        default_factory=ProviderConfigModel,
     )
 
     environment: ConfigEnvironment = Field(

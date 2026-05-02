@@ -12,7 +12,7 @@ Configurations can be loaded dynamically from a variety of sources:
 - Environment-specific JSON configuration files (ex: `config.dev.json` or `config.prod.json`)
 - Environment variables
 - [Argparse](https://docs.python.org/3/library/argparse.html)
-- `**kwargs`
+- Dictionaries
 
 Those configurations are then merged together (shallowly, with later configurations overriding earlier ones), and used to build up the provided Pydantic model.
 
@@ -74,15 +74,26 @@ class AppConfig(BaseModel):
 
 ```python
 ## main.py
-from confiddle import Confiddle, ConfiddleConfigModel, ConfigEnvironment, JsonConfigProviderConfigModel, EnvVarConfigProviderConfigModel
+from pathlib import Path
+
+from confiddle import (
+    Confiddle,
+    ConfiddleConfigModel,
+    ProviderConfigModel,
+    ConfigEnvironment,
+    JsonProviderConfig,
+    EnvVarProviderConfig,
+)
 from app_config import AppConfig
 
 confiddle = Confiddle(
     ConfiddleConfigModel(
-        ## `directory_path="."` searches for config JSON files at the current working directory
-        json_file=JsonConfigProviderConfigModel(directory_path="."),
-        ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
-        env_var=EnvVarConfigProviderConfigModel(prefix="MYAPP"),
+        app=ProviderConfigModel(
+            ## `directory_path=Path(".")` searches for config JSON files at the current working directory
+            json_file_provider=[JsonProviderConfig(directory_path=Path("."))],
+            ## `prefix="MYAPP"` filters out any environment variable that doesn't have the "MYAPP" prefix
+            env_var_provider=[EnvVarProviderConfig(prefix="MYAPP")],
+        ),
         ## This tells it to only load production configurations, like config.prod.json above.
         ## Note that it'll still load the base configurations regardless, like config.json above.
         environment=ConfigEnvironment.PROD,
