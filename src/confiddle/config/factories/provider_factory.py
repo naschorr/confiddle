@@ -13,6 +13,7 @@ from confiddle.config.providers.click_provider import ClickProvider
 from confiddle.config.providers.base_provider import BaseProvider
 from confiddle.config.providers.dict_provider import DictProvider
 from confiddle.config.providers.env_var_provider import EnvVarProvider
+from confiddle.config.providers.json_environment_provider import JsonEnvironmentProvider
 from confiddle.config.providers.json_provider import JsonProvider
 
 T = TypeVar("T", bound=BaseModel)
@@ -37,6 +38,8 @@ class ProviderFactory:
         elif isinstance(provider_config, DictProviderConfig):
             return DictProvider(model, provider_config)
         elif isinstance(provider_config, JsonProviderConfig):
+            if provider_config.environment is not None:
+                return JsonEnvironmentProvider(model, provider_config)
             return JsonProvider(model, provider_config)
         else:
             raise ValueError(f"Unsupported provider config type: {type(provider_config)}")

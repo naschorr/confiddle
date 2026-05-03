@@ -20,7 +20,6 @@ from confiddle.config.models.providers.env_var_provider_config import EnvVarProv
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
 from confiddle import Confiddle, ArgparseProviderConfig, DictProviderConfig
 
-
 ## ── Models ─────────────────────────────────────────────────────────────────────
 
 
@@ -217,14 +216,19 @@ class TestDisabledProviders:
         result = confiddle.load_config(AppConfig)
         assert result.host == "file-host"
 
-    def test_raises_when_json_file_missing(self, tmp_path: Path):
-        # directory_path set but no file written - FileNotFoundError raised
-        confiddle = _confiddle(tmp_path=tmp_path, hierarchy=[ConfigFlavor.JSON])
-        with pytest.raises(FileNotFoundError):
-            confiddle.load_config(AppConfig)
+    def test_missing_json_file_returns_model_defaults(self, tmp_path: Path):
+        # directory_path set but no file written - missing files are silently skipped
+        confiddle = Confiddle(
+            confiddle_config=ConfiddleConfigModel(
+                app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=tmp_path)]),
+                hierarchy=[ConfigFlavor.JSON],
+            )
+        )
+        result = confiddle.load_config(AppConfig)
+        assert result.host == "localhost"  # default
 
     def test_env_specific_file_ignored_when_environment_differs(self, tmp_path: Path):
-        # File for PROD exists but environment is DEV -> skip
+        # File for PROD exists but environment is DEV — JSON_ENV loads config.dev.json (absent)
         _write_json(tmp_path / "config.prod.json", {"host": "prod-host"})
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(

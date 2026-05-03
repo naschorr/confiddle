@@ -1,4 +1,5 @@
 from typing import Optional, TypeVar, cast
+import warnings
 
 from pydantic import BaseModel, ValidationError
 
@@ -65,14 +66,23 @@ class ConfigManager:
             provider_config = configured_provider_configs + provider_configs
         providers = self._build_providers(model, is_bootstrap, environment, provider_config)
 
+        multi_flavor_groups = {} if is_bootstrap else self._map_provider_family_to_providers(providers)
+        resolved_types: set[type] = set()
+
         merged = dict(base_data) if base_data else {}
         for provider in providers:
-            provider_config = provider.get_config()
+            data = provider.get_config()
+
+            if data:
+                resolved_types.add(type(provider).provider_family())
 
             if provider.merge_strategy is MergeStrategy.DEEP:
-                merged = DictMerger.deep_merge(merged, provider_config)
+                merged = DictMerger.deep_merge(merged, data)
             else:
-                merged |= provider_config
+                merged |= data
+
+        if not is_bootstrap:
+            self._warn_unresolved_groups(multi_flavor_groups, resolved_types)
 
         return cast(T, model(**merged))
 
@@ -99,7 +109,12 @@ class ConfigManager:
         result: list[BaseProviderConfig] = []
         for provider_config in provider_configs:
             result.append(provider_config)
-            if hasattr(provider_config, "environment") and environment is not None:
+            ## `getattr` to keep Pyright happy
+            if (
+                hasattr(provider_config, "environment")
+                and getattr(provider_config, "environment") is None
+                and environment is not None
+            ):
                 result.append(provider_config.model_copy(update={"environment": environment}))
         return result
 
@@ -111,6 +126,18 @@ class ConfigManager:
             result.setdefault(provider_config.config_flavor, []).append(provider_config)
 
         return result
+
+    def _map_provider_family_to_providers(self, providers: list[BaseProvider]) -> dict[type, list[BaseProvider]]:
+        """
+        Group providers by type, keeping only groups with more than one member.
+        These are the providers that were expanded from a single config into multiple flavors
+        by ``_inject_context`` and therefore warrant an unresolved-data warning.
+        """
+        groups: dict[type, list[BaseProvider]] = {}
+        for p in providers:
+            groups.setdefault(type(p).provider_family(), []).append(p)
+
+        return {k: v for k, v in groups.items() if len(v) > 1}
 
     def _build_providers(
         self,
@@ -137,3 +164,14 @@ class ConfigManager:
                 result.append(provider)
 
         return result
+
+    def _warn_unresolved_groups(self, groups: dict[type, list[BaseProvider]], resolved_types: set[type]) -> None:
+        """Emit a UserWarning for each multi-flavor provider group where no flavor returned data."""
+        for provider_type, group in groups.items():
+            if provider_type not in resolved_types:
+                warnings.warn(
+                    f"{provider_type.__name__} was configured but did not resolve any data "
+                    f"across {len(group)} flavors.",
+                    UserWarning,
+                    stacklevel=3,
+                )

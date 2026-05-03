@@ -7,7 +7,6 @@ from confiddle.helpers.field_annotation_helper import get_field_annotation, is_c
 
 from pydantic import BaseModel
 
-
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -17,7 +16,7 @@ class EnvVarProvider(BaseProvider):
     """
 
     def __init__(self, model: type[T], config: EnvVarProviderConfig):
-        super().__init__(model)
+        super().__init__(model, config)
 
         self._prefix = config.prefix
         self._delimiter = config.delimiter

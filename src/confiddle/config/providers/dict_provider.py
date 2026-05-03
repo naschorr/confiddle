@@ -8,7 +8,6 @@ from confiddle.config.providers.base_provider import BaseProvider
 
 from pydantic import BaseModel
 
-
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -22,7 +21,7 @@ class DictProvider(BaseProvider):
     """
 
     def __init__(self, model: type[T], config: DictProviderConfig):
-        super().__init__(model)
+        super().__init__(model, config)
         if config.scope:
             wrapped = config.data
             for key in reversed(config.scope.split(".")):

@@ -62,16 +62,54 @@ class TestJsonProvider:
         result = config_manager.get_config(SampleModel)
         assert result.name == "default"
 
-    def test_raises_when_json_file_not_present(self, config_dir: Path):
+    def test_missing_json_file_returns_model_defaults(self, config_dir: Path):
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)])
         )
-        with pytest.raises(FileNotFoundError):
+        result = config_manager.get_config(SampleModel)
+        assert result.name == "default"
+
+    def test_warns_when_no_json_files_resolved(self, config_dir: Path):
+        # no files written to config_dir; expect a UserWarning about unresolved provider
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)]),
+            environment=ConfigEnvironment.DEV,
+        )
+        with pytest.warns(UserWarning, match="did not resolve any data"):
             config_manager.get_config(SampleModel)
 
+    def test_no_warning_when_base_file_exists(self, config_dir: Path):
+        (config_dir / "config.json").write_text(json.dumps({"name": "x"}))
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)]),
+            environment=ConfigEnvironment.DEV,
+        )
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            config_manager.get_config(SampleModel)  # should not warn
+
+    def test_no_warning_when_env_file_exists_but_base_missing(self, config_dir: Path):
+        # only the env-specific file exists (user's warthog case) - at least one resolved, no warning
+        (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(json_file_provider=[JsonProviderConfig(directory_path=config_dir)]),
+            environment=ConfigEnvironment.DEV,
+        )
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            result = config_manager.get_config(SampleModel)
+        assert result.name == "from_dev"
+
     def test_skips_json_when_environment_mismatch(self, config_dir: Path):
-        # hierarchy default includes JSON_ENV; we set environment=PROD so DEV file is skipped
+        # JSON loads empty config.json; JSON_ENV tries config.prod.json (absent) - DEV file is never read
         (config_dir / "config.json").write_text(json.dumps({}))
         (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
 
@@ -173,9 +211,7 @@ class TestHierarchyOrder:
 class TestBuildProviderCoverage:
     def test_all_config_flavors_handled(self, config_dir: Path):
         # Every ConfigFlavor member should result in a call to _build_provider without raising.
-        # Write base and env-specific files so JSON/JSON_ENV flavors can resolve their providers.
-        (config_dir / "config.json").write_text(json.dumps({"name": "x"}))
-        (config_dir / "config.dev.json").write_text(json.dumps({}))
+        # JSON files are optional, so no files need to be created.
         for flavor in ConfigFlavor:
             config_manager = ConfigManager()
             config_manager.confiddle_config = ConfiddleConfigModel(
@@ -312,3 +348,22 @@ class TestDeepMerge:
         )
         assert result.name == "overlay"
         assert result.value == 1
+
+
+class TestInjectContextGuard:
+    def test_inject_context_does_not_duplicate_already_env_set_config(self, config_dir: Path):
+        # A JsonProviderConfig with environment already explicitly set should NOT be duplicated
+        # by _inject_context — only configs with environment=None should be stamped.
+        (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
+
+        config_manager = ConfigManager()
+        config_manager.confiddle_config = ConfiddleConfigModel(
+            app=ProviderConfigModel(
+                json_file_provider=[JsonProviderConfig(directory_path=config_dir, environment=ConfigEnvironment.DEV)]
+            ),
+            environment=ConfigEnvironment.PROD,
+            hierarchy=[ConfigFlavor.JSON_ENV],
+        )
+        # Should load config.dev.json (the explicitly-set env), NOT also config.prod.json
+        result = config_manager.get_config(SampleModel)
+        assert result.name == "from_dev"

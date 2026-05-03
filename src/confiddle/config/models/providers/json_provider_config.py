@@ -48,5 +48,4 @@ class JsonProviderConfig(BaseProviderConfig):
             *,
             directory_path: str | Path,
             filename_template: str = ...,
-            environment: Optional[ConfigEnvironment] = ...,
         ) -> None: ...

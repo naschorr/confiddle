@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 from pydantic import BaseModel
 
 from confiddle.config.enums.merge_strategy import MergeStrategy
+from confiddle.config.models.providers.base_provider_config import BaseProviderConfig
 from confiddle.helpers.model_validator import ModelValidator
 
 T = TypeVar("T", bound=BaseModel)
@@ -11,8 +12,20 @@ T = TypeVar("T", bound=BaseModel)
 
 class BaseProvider(ABC):
 
-    def __init__(self, model: type[T]):
+    def __init__(self, model: type[T], config: Optional[BaseProviderConfig] = None):
         self._model = model
+        self._provider_config = config
+
+    @classmethod
+    def provider_family(cls) -> type:
+        """Returns the root concrete provider type for this class.
+        Used to group related providers (e.g. JsonProvider and JsonEnvironmentProvider)
+        for warning purposes. Walks the MRO to find the nearest ancestor that is a
+        direct subclass of BaseProvider."""
+        for parent in cls.__mro__[1:]:
+            if issubclass(parent, BaseProvider) and parent is not BaseProvider:
+                return parent
+        return cls
 
     @property
     def merge_strategy(self) -> MergeStrategy:

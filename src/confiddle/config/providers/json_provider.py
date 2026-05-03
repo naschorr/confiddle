@@ -10,13 +10,16 @@ from confiddle.utilities.json_loader import JsonLoader
 
 from pydantic import BaseModel
 
-
 T = TypeVar("T", bound=BaseModel)
 
 
 class JsonProvider(BaseProvider):
     """
-    Loads configuration data from a JSON file
+    Loads configuration from the base JSON file.
+
+    The environment placeholder is stripped from the filename template, collapsing
+    any double period that results (e.g. ``config.{environment}.json`` → ``config.json``).
+    The file is optional — missing silently returns {}.
     """
 
     def __init__(
@@ -24,28 +27,12 @@ class JsonProvider(BaseProvider):
         model: type[T],
         config: JsonProviderConfig,
     ):
-        super().__init__(model)
-
-        environment = config.environment
-        if environment is None:
-            filename = config.filename_template.replace(f".{ENVIRONMENT_PLACEHOLDER}", "").replace(
-                f"{ENVIRONMENT_PLACEHOLDER}.", ""
-            )
-        else:
-            filename = config.filename_template.format(environment=environment.value)
-
-        file_path = config.directory_path / filename
-        if not file_path.exists():
-            if environment is not None:
-                # env-specific file is optional, act as a no-op provider
-                self.file_path = None
-            else:
-                raise FileNotFoundError(f"JSON config file '{file_path}' does not exist")
-        else:
-            self.file_path = file_path
+        super().__init__(model, config)
+        filename = config.filename_template.replace(ENVIRONMENT_PLACEHOLDER, "").replace("..", ".")
+        path = config.directory_path / filename
+        self.file_path: Optional[Path] = path if path.exists() else None
 
     def _get_raw_config(self) -> dict:
         if self.file_path is None:
             return {}
-
         return JsonLoader.load_json(self.file_path)

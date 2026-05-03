@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 from confiddle.config.enums.config_environment import ConfigEnvironment
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.json_provider_config import JsonProviderConfig
+from confiddle.config.providers.json_environment_provider import JsonEnvironmentProvider
 from confiddle.config.providers.json_provider import JsonProvider
 
 ## ── Setup ─────────────────────────────────────────────────────────
@@ -77,12 +78,12 @@ class TestFlatFields:
         )
         assert p.get_config() == {}
 
-    def test_raises_if_file_missing(self, tmp_path):
-        with pytest.raises(FileNotFoundError, match="does not exist"):
-            JsonProvider(
-                FlatModel,
-                JsonProviderConfig(directory_path=tmp_path, filename_template="missing.json"),
-            )
+    def test_missing_file_returns_empty_dict(self, tmp_path):
+        p = JsonProvider(
+            FlatModel,
+            JsonProviderConfig(directory_path=tmp_path, filename_template="missing.json"),
+        )
+        assert p.get_config() == {}
 
 
 ## ── Nested model ingest ───────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ class TestNestedIngest:
 class TestFilenameTemplates:
     def test_environment_substituted_into_filename(self, tmp_path):
         (tmp_path / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
-        p = JsonProvider(
+        p = JsonEnvironmentProvider(
             FlatModel,
             JsonProviderConfig(
                 directory_path=tmp_path,
@@ -159,7 +160,7 @@ class TestFilenameTemplates:
 
     def test_prod_environment_loads_prod_file(self, tmp_path):
         (tmp_path / "config.prod.json").write_text(json.dumps({"name": "from_prod"}))
-        p = JsonProvider(
+        p = JsonEnvironmentProvider(
             FlatModel,
             JsonProviderConfig(
                 directory_path=tmp_path,
@@ -171,8 +172,15 @@ class TestFilenameTemplates:
 
     def test_no_placeholder_uses_same_file_for_all_envs(self, tmp_path):
         (tmp_path / "config.json").write_text(json.dumps({"name": "shared"}))
-        for env in (None, ConfigEnvironment.DEV, ConfigEnvironment.PROD):
-            p = JsonProvider(
+        # Base provider (no env)
+        p = JsonProvider(
+            FlatModel,
+            JsonProviderConfig(directory_path=tmp_path, filename_template="config.json"),
+        )
+        assert p.get_config()["name"] == "shared"
+        # Env providers also load the same file when there's no placeholder
+        for env in (ConfigEnvironment.DEV, ConfigEnvironment.PROD):
+            p = JsonEnvironmentProvider(
                 FlatModel,
                 JsonProviderConfig(
                     directory_path=tmp_path,
@@ -191,9 +199,8 @@ class TestFilenameTemplates:
         assert p.file_path == tmp_path / "config.json"
 
     def test_file_path_for_non_base_environment_is_direct_substitution(self, tmp_path):
-        # For non-BASE envs, file_path is just the substituted template - no fallback involved
         (tmp_path / "config.dev.json").write_text(json.dumps({}))
-        p = JsonProvider(
+        p = JsonEnvironmentProvider(
             FlatModel,
             JsonProviderConfig(
                 directory_path=tmp_path,
@@ -205,7 +212,7 @@ class TestFilenameTemplates:
 
     def test_missing_env_file_returns_empty_dict(self, tmp_path):
         # env-specific file is optional — missing file is a no-op, not an error
-        p = JsonProvider(
+        p = JsonEnvironmentProvider(
             FlatModel,
             JsonProviderConfig(
                 directory_path=tmp_path,
