@@ -228,7 +228,7 @@ class TestDisabledProviders:
         assert result.host == "localhost"  # default
 
     def test_env_specific_file_ignored_when_environment_differs(self, tmp_path: Path):
-        # File for PROD exists but environment is DEV — JSON_ENV loads config.dev.json (absent)
+        # File for PROD exists but environment is DEV - JSON_ENV loads config.dev.json (absent)
         _write_json(tmp_path / "config.prod.json", {"host": "prod-host"})
         confiddle = Confiddle(
             confiddle_config=ConfiddleConfigModel(

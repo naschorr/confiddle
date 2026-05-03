@@ -211,7 +211,7 @@ class TestFilenameTemplates:
         assert p.file_path == tmp_path / "config.dev.json"
 
     def test_missing_env_file_returns_empty_dict(self, tmp_path):
-        # env-specific file is optional — missing file is a no-op, not an error
+        # env-specific file is optional - missing file is a no-op, not an error
         p = JsonEnvironmentProvider(
             FlatModel,
             JsonProviderConfig(

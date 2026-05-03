@@ -15,7 +15,7 @@ class JsonEnvironmentProvider(JsonProvider):
 
     The environment value is substituted into the filename template
     (e.g. ``config.{environment}.json`` + ``DEV`` → ``config.dev.json``).
-    The file is optional — missing silently returns {}.
+    The file is optional - missing silently returns {}.
 
     ``provider_family()`` resolves to ``JsonProvider`` via MRO, so this provider
     is grouped with its base counterpart for unresolved-data warnings.

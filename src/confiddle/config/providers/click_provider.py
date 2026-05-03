@@ -13,7 +13,7 @@ class ClickProvider(DictProvider):
     """
     Loads configuration data from Click-parsed arguments.
 
-    None values are stripped — Click uses None as the sentinel for options the user
+    None values are stripped - Click uses None as the sentinel for options the user
     did not supply, mirroring the behaviour of ArgparseProvider.
     """
 

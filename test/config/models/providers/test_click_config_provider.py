@@ -74,7 +74,7 @@ class TestClickProvider:
         assert provider.get_config() == {"name": "x"}
 
     def test_none_values_stripped(self):
-        # Click uses None as "option not supplied" — these must not reach the model
+        # Click uses None as "option not supplied" - these must not reach the model
         provider = ClickProvider(SampleModel, ClickProviderConfig(args={"name": "x", "value": None}))
         assert provider.get_config() == {"name": "x"}
 
@@ -117,7 +117,7 @@ class TestClickProvider:
         assert provider.get_config() == {"name": "ctx-name"}
 
     def test_unrecognised_keys_filtered_out(self):
-        # DictProvider filters keys against the model schema — unknown keys are dropped
+        # DictProvider filters keys against the model schema - unknown keys are dropped
         provider = ClickProvider(SampleModel, ClickProviderConfig(args={"name": "x", "extra": "ignored"}))
         result = provider.get_config()
         assert result["name"] == "x"

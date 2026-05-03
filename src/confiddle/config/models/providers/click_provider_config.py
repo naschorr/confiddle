@@ -14,7 +14,7 @@ class ClickProviderConfig(BaseProviderConfig):
     Supplies configuration values from Click-parsed arguments.
 
     Accepts either a plain dict (e.g. the ``**kwargs`` received by a Click command function)
-    or a ``click.Context`` object — confiddle duck-types ``.params`` off the context so
+    or a ``click.Context`` object - confiddle duck-types ``.params`` off the context so
     that Click is not a required dependency.
 
     Usage::

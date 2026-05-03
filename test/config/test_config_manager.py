@@ -353,7 +353,7 @@ class TestDeepMerge:
 class TestInjectContextGuard:
     def test_inject_context_does_not_duplicate_already_env_set_config(self, config_dir: Path):
         # A JsonProviderConfig with environment already explicitly set should NOT be duplicated
-        # by _inject_context — only configs with environment=None should be stamped.
+        # by _inject_context - only configs with environment=None should be stamped.
         (config_dir / "config.dev.json").write_text(json.dumps({"name": "from_dev"}))
 
         config_manager = ConfigManager()

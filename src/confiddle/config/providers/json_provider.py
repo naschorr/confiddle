@@ -19,7 +19,7 @@ class JsonProvider(BaseProvider):
 
     The environment placeholder is stripped from the filename template, collapsing
     any double period that results (e.g. ``config.{environment}.json`` → ``config.json``).
-    The file is optional — missing silently returns {}.
+    The file is optional - missing silently returns {}.
     """
 
     def __init__(
