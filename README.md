@@ -12,6 +12,7 @@ Configurations can be loaded dynamically from a variety of sources:
 - Environment-specific JSON configuration files (ex: `config.dev.json` or `config.prod.json`)
 - Environment variables
 - [Argparse](https://docs.python.org/3/library/argparse.html)
+- [Click](https://click.palletsprojects.com/en/stable/)
 - Dictionaries
 
 Those configurations are then merged together (shallowly, with later configurations overriding earlier ones), and used to build up the provided Pydantic model.
