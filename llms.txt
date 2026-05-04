@@ -1,0 +1,35 @@
+# Confiddle
+
+> Hierarchical configuration for Python, inspired by .NET and powered by Pydantic. Load configuration from JSON files, environment variables, argparse, Click, and plain dicts. Merge them in a defined order, validate against a Pydantic model, and get a fully-typed config object back.
+
+## Key concepts
+
+- `Confiddle` - main entry point. Call `load_config(MyModel)` to get a validated model instance.
+- `ConfiddleConfigModel` - configures Confiddle itself: which providers to use, active environment, and merge order (`hierarchy`).
+- `ProviderConfigModel` - registers provider configs for the application (JSON dirs, env var prefix, etc.).
+- `hierarchy` - ordered list of `ConfigFlavor` values. Later entries win. Default: `[JSON, JSON_ENV, ENV_VAR, ARGPARSE, DICT]`.
+- `ConfigEnvironment` - `DEV`, `TEST`, `PROD`. Controls which env-specific JSON file is loaded.
+- Merging is **shallow** at the top level. Use `scope` on dict/argparse/click providers for deep merging into a nested section.
+- A single `JsonProviderConfig` participates in both `JSON` (base file) and `JSON_ENV` (env-specific file) flavors automatically.
+- Confiddle bootstraps itself from `CONFIDDLE:*` env vars and `confiddle.json`, so `environment` and `hierarchy` can be set externally without code changes.
+
+## Docs
+
+- [docs/documentation.md](docs/documentation.md) - full API reference, hierarchy/merge/environment/bootstrap explanations
+- [docs/examples.md](docs/examples.md) - annotated examples from basic JSON loading to full production setup
+- [docs/providers/json.md](docs/providers/json.md) - JsonProviderConfig: file templates, two-flavor behavior
+- [docs/providers/env_var.md](docs/providers/env_var.md) - EnvVarProviderConfig: prefix, delimiter, nested key mapping
+- [docs/providers/argparse.md](docs/providers/argparse.md) - ArgparseProviderConfig: Namespace coercion, None filtering, scope
+- [docs/providers/click.md](docs/providers/click.md) - ClickProviderConfig: kwargs and Context forms, None filtering, scope
+- [docs/providers/dict.md](docs/providers/dict.md) - DictProviderConfig: shallow vs deep merge, scope
+
+## Source
+
+- [src/confiddle/__init__.py](src/confiddle/__init__.py) - public API surface
+- [src/confiddle/main.py](src/confiddle/main.py) - `Confiddle` class and `load_config`
+- [src/confiddle/config/config_manager.py](src/confiddle/config/config_manager.py) - merge engine, hierarchy, inject_context, warnings
+- [src/confiddle/config/models/confiddle_config_model.py](src/confiddle/config/models/confiddle_config_model.py) - `ConfiddleConfigModel`
+- [src/confiddle/config/models/provider_config_model.py](src/confiddle/config/models/provider_config_model.py) - `ProviderConfigModel`
+- [src/confiddle/config/factories/provider_factory.py](src/confiddle/config/factories/provider_factory.py) - maps configs to provider instances
+- [src/confiddle/config/providers/](src/confiddle/config/providers/) - provider implementations
+- [src/confiddle/config/models/providers/](src/confiddle/config/models/providers/) - provider config models
