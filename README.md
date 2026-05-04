@@ -112,3 +112,8 @@ config = confiddle.load_config(AppConfig)
 ```
 
 And that's it! Confiddle uses the configuration files and Pydantic models that you're already using, but formalizes the ingestion process, making all the magic happen in just a few lines of code.
+
+## Documentation
+
+- [API Reference](docs/documentation.md) - API docs, hierarchy behavior, environments, and bootstrapping
+- [Examples](docs/examples.md) - common usage patterns and recipes
