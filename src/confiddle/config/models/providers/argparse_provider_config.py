@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated, Optional
+import argparse
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from pydantic import BeforeValidator, Field
 
@@ -31,3 +32,12 @@ class ArgparseProviderConfig(BaseProviderConfig):
     @property
     def config_flavor(self) -> ConfigFlavor:
         return ConfigFlavor.ARGPARSE
+
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            *,
+            args: dict | argparse.Namespace = ...,
+            scope: Optional[str] = ...,
+        ) -> None: ...

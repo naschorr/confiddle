@@ -359,7 +359,11 @@ class TestInjectContextGuard:
         config_manager = ConfigManager()
         config_manager.confiddle_config = ConfiddleConfigModel(
             app=ProviderConfigModel(
-                json_file_provider=[JsonProviderConfig(directory_path=config_dir, environment=ConfigEnvironment.DEV)]
+                json_file_provider=[
+                    JsonProviderConfig(directory_path=config_dir).model_copy(
+                        update={"environment": ConfigEnvironment.DEV}
+                    )
+                ]
             ),
             environment=ConfigEnvironment.PROD,
             hierarchy=[ConfigFlavor.JSON_ENV],

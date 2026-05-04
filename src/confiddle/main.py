@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Optional, TypeVar
 
 from pydantic import BaseModel
@@ -35,5 +36,5 @@ class Confiddle:
 
     ## Methods
 
-    def load_config(self, config_model: type[T], *, provider_configs: list[BaseProviderConfig] = []) -> T:
-        return self._config_manager.get_config(config_model, provider_configs=provider_configs)
+    def load_config(self, config_model: type[T], *, provider_configs: Sequence[BaseProviderConfig] = []) -> T:
+        return self._config_manager.get_config(config_model, provider_configs=list(provider_configs))
