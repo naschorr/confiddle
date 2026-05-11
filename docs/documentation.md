@@ -126,7 +126,7 @@ Confiddle(confiddle_config: ConfiddleConfigModel | None = None)
 
 | Parameter | Type | Description |
 |---|---|---|
-| `confiddle_config` | `ConfiddleConfigModel` or `None` | Configuration for Confiddle itself. When `None`, Confiddle bootstraps from `CONFIDDLE_*` env vars and `confiddle.json` in the working directory. |
+| `confiddle_config` | `ConfiddleConfigModel` or `None` | Configuration for Confiddle itself. When `None`, Confiddle bootstraps from `CONFIDDLE:*` env vars and `confiddle.json` in the working directory. |
 
 #### `load_config`
 
@@ -269,9 +269,19 @@ The filename template defaults to `config.{environment}.json` and is configurabl
 Confiddle bootstraps itself before loading your app config. By default it reads from:
 
 - `CONFIDDLE:*` environment variables
-- `confiddle.json` in the working directory
+- `confiddle.json` in the current working directory
 
-This means you can configure Confiddle's own `environment` and `hierarchy` from outside the code, without touching Python. Override the bootstrap behavior by setting providers inside `ConfiddleConfigModel.bootstrap` explicitly.
+However, you can also feed `Confiddle` a customized `ConfiddleConfigModel` to set those values to whatever you'd like, like so:
+
+```python
+from confiddle import Confiddle, ConfiddleConfigModel, ConfigEnvironment
+
+confiddle = Confiddle(
+    ConfiddleConfigModel(
+        environment=ConfigEnvironment.PROD
+    )
+)
+```
 
 ---
 

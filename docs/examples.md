@@ -6,17 +6,7 @@
 
 Load a single JSON file from the current directory.
 
-```python
-from pydantic import BaseModel
-from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig
-
-class AppConfig(BaseModel):
-    host: str = "localhost"
-    port: int = 8080
-    debug: bool = False
-```
-
-```json
+```jsonc
 // config.json
 {
     "host": "0.0.0.0",
@@ -25,6 +15,14 @@ class AppConfig(BaseModel):
 ```
 
 ```python
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig
+
+class AppConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 8080
+    debug: bool = False
+
 confiddle = Confiddle(
     ConfiddleConfigModel(
         app=ProviderConfigModel(
@@ -45,17 +43,7 @@ config = confiddle.load_config(AppConfig)
 
 Layer a base file with an environment-specific override. The env file only needs to contain the keys it overrides.
 
-```python
-from pydantic import BaseModel
-
-class AppConfig(BaseModel):
-    host: str = "localhost"
-    port: int = 8080
-    debug: bool = False
-    workers: int = 1
-```
-
-```json
+```jsonc
 // config.json
 {
     "host": "localhost",
@@ -65,7 +53,7 @@ class AppConfig(BaseModel):
 }
 ```
 
-```json
+```jsonc
 // config.prod.json
 {
     "host": "0.0.0.0",
@@ -75,7 +63,15 @@ class AppConfig(BaseModel):
 ```
 
 ```python
-from confiddle import ConfigEnvironment, ConfigFlavor
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig, ConfigEnvironment, ConfigFlavor
+
+class AppConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 8080
+    debug: bool = False
+    workers: int = 1
+
 
 confiddle = Confiddle(
     ConfiddleConfigModel(
@@ -100,7 +96,7 @@ config = confiddle.load_config(AppConfig)
 
 Secrets and deployment-time values injected via env vars, base defaults from JSON.
 
-```json
+```jsonc
 // config.json
 {
     "host": "localhost",
@@ -109,12 +105,14 @@ Secrets and deployment-time values injected via env vars, base defaults from JSO
 ```
 
 ```shell
+## environment variables
 export MYAPP:DB_PASSWORD=hunter2
 export MYAPP:PORT=443
 ```
 
 ```python
-from confiddle import EnvVarProviderConfig
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig, EnvVarProviderConfig, ConfigFlavor
 
 class AppConfig(BaseModel):
     host: str = "localhost"
@@ -145,7 +143,12 @@ Pass argparse's `Namespace` or `vars()`'s `dict` output and have them ingested i
 
 ```python
 import argparse
-from confiddle import ArgparseProviderConfig
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig, ArgparseProviderConfig, ConfigFlavor
+
+class AppConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 8080
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", default=None)
@@ -165,7 +168,6 @@ config = confiddle.load_config(
     AppConfig,
     provider_configs=[ArgparseProviderConfig(args=args)],
 )
-# CLI args override JSON; unset args (None) are filtered out
 ```
 
 ---
@@ -176,7 +178,12 @@ Pass Click's `Context` or `**kwargs` output and have them ingested into the conf
 
 ```python
 import click
-from confiddle import ClickProviderConfig, ConfigFlavor
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig, ClickProviderConfig, ConfigFlavor
+
+class AppConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 8080
 
 @click.command()
 @click.option("--host", default=None)
@@ -204,7 +211,12 @@ def run(**kwargs):
 Inject arbitrary dictionary values programmatically, which is useful in tests or for computed defaults.
 
 ```python
-from confiddle import DictProviderConfig
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ConfigFlavor, DictProviderConfig
+
+class AppConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 8080
 
 confiddle = Confiddle(
     ConfiddleConfigModel(hierarchy=[ConfigFlavor.JSON, ConfigFlavor.DICT])
@@ -223,6 +235,9 @@ config = confiddle.load_config(
 Use `scope` to target a specific section of a nested config model. Scoped providers deep-merge, so only the keys you supply are overridden.
 
 ```python
+from pydantic import BaseModel
+from confiddle import Confiddle, ConfiddleConfigModel, ConfigFlavor, DictProviderConfig
+
 class DatabaseConfig(BaseModel):
     host: str = "localhost"
     port: int = 5432
@@ -231,6 +246,10 @@ class DatabaseConfig(BaseModel):
 class AppConfig(BaseModel):
     database: DatabaseConfig = DatabaseConfig()
     debug: bool = False
+
+confiddle = Confiddle(
+    ConfiddleConfigModel(hierarchy=[ConfigFlavor.DICT])
+)
 
 config = confiddle.load_config(
     AppConfig,
@@ -251,6 +270,8 @@ config = confiddle.load_config(
 Any provider type can be registered multiple times. They are applied in list order within their flavor, so later entries win on conflict.
 
 ```python
+from confiddle import Confiddle, ConfiddleConfigModel, ProviderConfigModel, JsonProviderConfig, EnvVarProviderConfig, ConfigFlavor
+
 confiddle = Confiddle(
     ConfiddleConfigModel(
         app=ProviderConfigModel(
@@ -276,7 +297,13 @@ All four providers participate: both JSON directories are read for base and env 
 
 Base configuration JSON + environment configuration JSON override + env var secrets, driven by environment.
 
-Confiddle bootstraps itself from `CONFIDDLE:*` env vars and `confiddle.json`, so `environment` doesn't need to be read manually - just set `CONFIDDLE:ENVIRONMENT=prod` in the deployment environment and Confiddle picks it up automatically.
+Confiddle bootstraps itself from `CONFIDDLE:*` env vars and `confiddle.json`, so `environment` doesn't need to be read manually, just set `CONFIDDLE:ENVIRONMENT=prod` in the deployment environment and Confiddle picks it up automatically.
+
+```shell
+## environment variables
+export CONFIDDLE:ENVIRONMENT=prod
+export APP:DB_PASSWORD=hunter2
+```
 
 ```python
 from confiddle import (
@@ -318,11 +345,4 @@ config/
     config.json         # shared defaults
     config.dev.json     # dev overrides
     config.prod.json    # prod overrides
-```
-
-Env vars expected:
-
-```shell
-CONFIDDLE:ENVIRONMENT=prod
-APP:DB_PASSWORD=hunter2
 ```
