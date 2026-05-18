@@ -18,18 +18,32 @@ def unwrap_annotation(annotation):
 
 def is_container_annotation(annotation) -> bool:
     """
-    Return True if the annotation represents a type that env var paths should descend into (a BaseModel subclass or
-    dict), rather than assign a flat string value to.
+    Return True if the annotation represents a type that env var paths should descend into (a BaseModel subclass,
+    dict, or list of such types), rather than assign a flat string value to.
     """
     inner = unwrap_annotation(annotation)
-    # Unwrap parameterised forms like dict[str, Any] -> dict
     origin = get_origin(inner)
     if origin is not None:
+        # list[X] is a container if X is also a container (e.g. list[SomeModel])
+        if origin is list:
+            args = get_args(inner)
+            return is_container_annotation(args[0]) if args else False
         inner = origin
     try:
         return inner is dict or (isinstance(inner, type) and issubclass(inner, (BaseModel, dict)))
     except TypeError:
         return False
+
+
+def get_list_element_annotation(annotation):
+    """
+    If annotation is list[X] (after unwrapping Optional/Annotated), return X. Otherwise return None.
+    """
+    inner = unwrap_annotation(annotation)
+    if get_origin(inner) is list:
+        args = get_args(inner)
+        return args[0] if args else None
+    return None
 
 
 def get_field_annotation(model, key: str):

@@ -3,7 +3,12 @@ from typing import TypeVar
 
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
 from confiddle.config.providers.base_provider import BaseProvider
-from confiddle.helpers.field_annotation_helper import get_field_annotation, is_container_annotation, unwrap_annotation
+from confiddle.helpers.field_annotation_helper import (
+    get_field_annotation,
+    get_list_element_annotation,
+    is_container_annotation,
+    unwrap_annotation,
+)
 
 from pydantic import BaseModel
 
@@ -45,7 +50,7 @@ class EnvVarProvider(BaseProvider):
 
             self._set_nested(config_dict, parts, value, self._model)
 
-        return config_dict
+        return self._convert_numeric_dicts_to_lists(config_dict, self._model)
 
     def _set_nested(self, target: dict, parts: list[str], value: str, model) -> None:
         key = parts[0]
@@ -71,9 +76,56 @@ class EnvVarProvider(BaseProvider):
 
         # Determine the child model for schema lookups at the next level
         unwrapped = unwrap_annotation(annotation) if annotation is not None else None
+        # For list[X] annotations, use the element type X for nested field lookups
+        if annotation is not None:
+            list_element = get_list_element_annotation(annotation)
+            if list_element is not None:
+                unwrapped = list_element
         child_model = (
             unwrapped
             if unwrapped is not None and isinstance(unwrapped, type) and issubclass(unwrapped, BaseModel)
             else None
         )
         self._set_nested(target[key], parts[1:], value, child_model)
+
+    @staticmethod
+    def _convert_numeric_dicts_to_lists(d: dict, model=None) -> dict:
+        """
+        Recursively convert dicts whose keys are all digit strings into lists, but only when the
+        corresponding model field is typed as list[X]. Unknown or non-list fields are left as-is.
+        """
+        result = {}
+        for key, value in d.items():
+            if not isinstance(value, dict):
+                result[key] = value
+                continue
+
+            annotation = get_field_annotation(model, key) if model is not None else None
+            list_element_type = get_list_element_annotation(annotation) if annotation is not None else None
+
+            if list_element_type is not None and value and all(k.isdigit() for k in value):
+                # Known list[X] field with numeric indices - convert to a list
+                item_model = (
+                    list_element_type
+                    if isinstance(list_element_type, type) and issubclass(list_element_type, BaseModel)
+                    else None
+                )
+                max_index = max(int(k) for k in value)
+                array: list = [None] * (max_index + 1)
+                for index_str, item in value.items():
+                    array[int(index_str)] = (
+                        EnvVarProvider._convert_numeric_dicts_to_lists(item, item_model)
+                        if isinstance(item, dict)
+                        else item
+                    )
+                result[key] = array
+            else:
+                # Not a list field - recurse with the child model if available
+                child_model = None
+                if annotation is not None:
+                    unwrapped = unwrap_annotation(annotation)
+                    if isinstance(unwrapped, type) and issubclass(unwrapped, BaseModel):
+                        child_model = unwrapped
+                result[key] = EnvVarProvider._convert_numeric_dicts_to_lists(value, child_model)
+
+        return result
