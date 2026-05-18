@@ -212,3 +212,73 @@ class TestConfigFlavor:
     def test_env_var_provider_config_flavor_is_env_var(self):
         config = EnvVarProviderConfig(prefix="APP")
         assert config.config_flavor is ConfigFlavor.ENV_VAR
+
+
+## ── List of objects ───────────────────────────────────────────────────────────
+
+
+class ItemConfig(BaseModel):
+    id: str
+    name: str = "default"
+
+
+class TagsConfig(BaseModel):
+    label: str
+
+
+class ItemWithListConfig(BaseModel):
+    id: str
+    tags: list[TagsConfig] = []
+
+
+class ListContainerModel(BaseModel):
+    items: list[ItemConfig] = []
+
+
+class NestedListModel(BaseModel):
+    items: list[ItemWithListConfig] = []
+
+
+class TestListOfObjects:
+    def test_single_item_in_list(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__0__ID", "item1")
+        result = EnvVarProvider(ListContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert result == {"items": [{"id": "item1"}]}
+
+    def test_single_item_with_multiple_fields(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__0__ID", "item1")
+        monkeypatch.setenv("APP__ITEMS__0__NAME", "Item One")
+        result = EnvVarProvider(ListContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert result == {"items": [{"id": "item1", "name": "Item One"}]}
+
+    def test_multiple_items_in_list(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__0__ID", "first")
+        monkeypatch.setenv("APP__ITEMS__1__ID", "second")
+        result = EnvVarProvider(ListContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert result["items"] == [{"id": "first"}, {"id": "second"}]
+
+    def test_list_items_ordered_by_index(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__1__ID", "second")
+        monkeypatch.setenv("APP__ITEMS__0__ID", "first")
+        result = EnvVarProvider(ListContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert result["items"][0] == {"id": "first"}
+        assert result["items"][1] == {"id": "second"}
+
+    def test_nested_list_inside_list_item(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__0__ID", "item1")
+        monkeypatch.setenv("APP__ITEMS__0__TAGS__0__LABEL", "urgent")
+        result = EnvVarProvider(NestedListModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert result == {"items": [{"id": "item1", "tags": [{"label": "urgent"}]}]}
+
+    def test_list_result_is_python_list_not_dict(self, monkeypatch):
+        monkeypatch.setenv("APP__ITEMS__0__ID", "item1")
+        result = EnvVarProvider(ListContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")).get_config()
+        assert isinstance(result["items"], list)
+
+    def test_dict_field_with_digit_keys_is_not_converted_to_list(self, monkeypatch):
+        # FlatModel.db is typed as dict, not list - digit keys must not trigger list conversion
+        monkeypatch.setenv("MYAPP__DB__0", "first")
+        monkeypatch.setenv("MYAPP__DB__1", "second")
+        result = EnvVarProvider(FlatModel, EnvVarProviderConfig(prefix="MYAPP", delimiter="__")).get_config()
+        assert isinstance(result["db"], dict)
+        assert result["db"] == {"0": "first", "1": "second"}
