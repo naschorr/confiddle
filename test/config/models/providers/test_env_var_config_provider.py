@@ -1,7 +1,8 @@
 import os
+from typing import Annotated, Literal, Union
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from confiddle.config.enums.config_flavor import ConfigFlavor
 from confiddle.config.models.providers.env_var_provider_config import EnvVarProviderConfig
@@ -282,3 +283,41 @@ class TestListOfObjects:
         result = EnvVarProvider(FlatModel, EnvVarProviderConfig(prefix="MYAPP", delimiter="__")).get_config()
         assert isinstance(result["db"], dict)
         assert result["db"] == {"0": "first", "1": "second"}
+
+
+## ── List with Annotated/discriminated-union element type ─────────────────────
+
+
+class CpuVariant(BaseModel):
+    flavor: Literal["cpu"] = "cpu"
+    id: str
+    fans: list[str] = []
+
+
+# Mirrors a Pydantic discriminated union: Annotated[Union[CpuVariant], Field(discriminator="flavor")]
+AnnotatedSensorConfig = Annotated[Union[CpuVariant], Field(discriminator="flavor")]
+
+
+class SensorContainerModel(BaseModel):
+    sensors: list[AnnotatedSensorConfig] = []
+
+
+class TestAnnotatedListElement:
+    def test_primitive_list_inside_annotated_element_is_converted(self, monkeypatch):
+        # sensors[0].fans is list[str]; fans__0 must become ["primary"], not {"0": "primary"}
+        monkeypatch.setenv("APP__SENSORS__0__ID", "cpu")
+        monkeypatch.setenv("APP__SENSORS__0__FLAVOR", "cpu")
+        monkeypatch.setenv("APP__SENSORS__0__FANS__0", "primary")
+        result = EnvVarProvider(
+            SensorContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")
+        ).get_config()
+        assert result["sensors"][0]["fans"] == ["primary"]
+
+    def test_annotated_element_fields_survive_conversion(self, monkeypatch):
+        monkeypatch.setenv("APP__SENSORS__0__ID", "cpu")
+        monkeypatch.setenv("APP__SENSORS__0__FLAVOR", "cpu")
+        result = EnvVarProvider(
+            SensorContainerModel, EnvVarProviderConfig(prefix="APP", delimiter="__")
+        ).get_config()
+        assert result["sensors"][0]["id"] == "cpu"
+        assert result["sensors"][0]["flavor"] == "cpu"

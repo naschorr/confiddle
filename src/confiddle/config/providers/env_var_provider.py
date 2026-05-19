@@ -104,10 +104,13 @@ class EnvVarProvider(BaseProvider):
             list_element_type = get_list_element_annotation(annotation) if annotation is not None else None
 
             if list_element_type is not None and value and all(k.isdigit() for k in value):
-                # Known list[X] field with numeric indices - convert to a list
+                # Known list[X] field with numeric indices - convert to a list.
+                # Unwrap Annotated/Optional wrappers (e.g. Annotated[Union[T], Field(...)]) to reach the
+                # concrete BaseModel so the child can still do schema-aware conversion.
+                unwrapped_element = unwrap_annotation(list_element_type)
                 item_model = (
-                    list_element_type
-                    if isinstance(list_element_type, type) and issubclass(list_element_type, BaseModel)
+                    unwrapped_element
+                    if isinstance(unwrapped_element, type) and issubclass(unwrapped_element, BaseModel)
                     else None
                 )
                 max_index = max(int(k) for k in value)
